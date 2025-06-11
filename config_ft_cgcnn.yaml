@@ -27,7 +27,7 @@ target_property: Di
 
 dataset:
   root_dir: ./test_datasets/CoRE2019
-  label_dir_temp: ./test_datasets/id_{target_property}.csv
+  label_dir_template: ./test_datasets/id_{target_property}.csv
 
   max_num_nbr: 12
   radius: 8

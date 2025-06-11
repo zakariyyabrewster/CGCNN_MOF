@@ -47,7 +47,15 @@ class FineTune(object):
 
         self.criterion = nn.MSELoss()
 
-        self.dataset = CIFData(self.config['task'], **self.config['dataset']) # use this if you dont have .npz files of preloaded crystal graphs
+        # apply property filter 
+        label_dir_template = self.config['dataset']['label_dir_template']
+        target_property = self.config['target_property']
+        new_label_dir = label_dir_template.format(target_property=target_property)
+        new_config = self.config['dataset'].copy()
+        new_config['label_dir'] = new_label_dir
+        new_config.pop('label_dir_template', None)
+
+        self.dataset = CIFData(self.config['task'], **new_config) # use this if you dont have .npz files of preloaded crystal graphs
         # self.dataset = CGData(self.config['task'], **self.config['dataset'], shuffle=False)
         self.random_seed = self.config['random_seed']
         collate_fn = collate_pool
@@ -94,7 +102,7 @@ class FineTune(object):
                                     **self.config['model']
         )
 
-        model = self._load_pre_trained_weights(model)
+        # model = self._load_pre_trained_weights(model)
 
         if self.config['cuda']:
             model = model.to(self.device)
@@ -342,24 +350,26 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Crystal Graph Convolutional Neural Networks')
     parser.add_argument('--seed', default=1, type=int,
                         metavar='Seed', help='random seed for splitting data (default: 1)')
+    parser.add_argument('--target_prop', type=str, help="Target property to override in config", default='Di')
 
     args = parser.parse_args(sys.argv[1:])
 
     config = yaml.load(open("config_ft_cgcnn.yaml", "r"), Loader=yaml.FullLoader)
     print(config)
     config['random_seed'] = args.seed
-
-    if 'hMOF' in config['data_name']:
-        # task_name = 'hMOF'
-        task_name = config['data_name']
-        pressure = config['data_name'].split('_')[-1]
-        if 'small' in config['dataset']['label_dir']:
-            task_name = task_name+'_small'
-    if 'QMOF' in config['data_name']:
-        task_name = 'QMOF'
-        if 'small' in config['dataset']['label_dir']:
-            task_name = task_name+'_small'
-
+    config['target_property'] = args.target_prop
+    
+    # if 'hMOF' in config['data_name']:
+    #     # task_name = 'hMOF'
+    #     task_name = config['data_name']
+    #     pressure = config['data_name'].split('_')[-1]
+    #     if 'small' in config['dataset']['label_dir']:
+    #         task_name = task_name+'_small'
+    # if 'QMOF' in config['data_name']:
+    #     task_name = 'QMOF'
+    #     if 'small' in config['dataset']['label_dir']:
+    #         task_name = task_name+'_small'
+    task_name = config['data_name']
     # ftf: finetuning from
     if 'scratch' not in config['fine_tune_from']:
         # ftf = config['fine_tune_from'].split('/')[-1]
@@ -368,10 +378,11 @@ if __name__ == "__main__":
         ftf = 'scratch'
 
     seed = config['random_seed']
+    target_property = config['target_property']
 
     log_dir = os.path.join(
         'training_results/finetuning/CGCNN',
-        'CGCNN_{}_{}_{}'.format(ftf, task_name,seed)
+        'CGCNN_{}_{}_{}_{}'.format(ftf, task_name,seed, target_property)
     )
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -380,7 +391,7 @@ if __name__ == "__main__":
     fine_tune.train()
     loss, metric = fine_tune.test()
 
-    fn = 'CGCNN_{}_{}_{}.csv'.format(ftf,task_name,seed)
+    fn = 'CGCNN_{}_{}_{}_{}.csv'.format(ftf,task_name,seed, target_property)
     df = pd.DataFrame([[loss, metric.item()]])
     df.to_csv(
         os.path.join(log_dir, fn),

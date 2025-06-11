@@ -20,12 +20,14 @@ model:
   n_conv: 3
   n_h: 1
 
-data_name: 'QMOF'
+data_name: 'CoRE2019'
 # data_name: 'hMOF_CO2_0.5'
+
+target_property: Di
 
 dataset:
   root_dir: ./test_datasets/CoRE2019
-  label_dir: ./test_datasets/id_Di.csv
+  label_dir_temp: ./test_datasets/id_{target_property}.csv
 
   max_num_nbr: 12
   radius: 8

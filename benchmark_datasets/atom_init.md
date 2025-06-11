@@ -2,7 +2,7 @@
 ## Structure of atom_init
 Dictionary -> key = str: atomic number, value = list: property encoding with values [0,1] of length 92 (no. of total categories)
 
-Properties embedded:
+## Properties embedded:
 - ```embedding[Z][0]``` = if lanthanide/actinide (1 if yes, 0 if no)
   - 1 category
 - ```embedding[Z][1:19]``` = onehot(group_number): Atomic Group Number 1-18

@@ -47,8 +47,8 @@ class FineTune(object):
 
         self.criterion = nn.MSELoss()
 
-        # self.dataset = CIFData(self.config['task'], **self.config['dataset']) # use this if you dont have .npz files of preloaded crystal graphs
-        self.dataset = CGData(self.config['task'], **self.config['dataset'], shuffle=False)
+        self.dataset = CIFData(self.config['task'], **self.config['dataset']) # use this if you dont have .npz files of preloaded crystal graphs
+        # self.dataset = CGData(self.config['task'], **self.config['dataset'], shuffle=False)
         self.random_seed = self.config['random_seed']
         collate_fn = collate_pool
         self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader(
@@ -86,9 +86,9 @@ class FineTune(object):
         return device
 
     def train(self):
-        structures, _, _ = self.dataset[0]
-        orig_atom_fea_len = structures[0].shape[-1]
-        nbr_fea_len = structures[1].shape[-1]
+        structures, _, _ = self.dataset[0] # dataset[0] = (atom_fea, nbr_fea, nbr_fea_idx)
+        orig_atom_fea_len = structures[0].shape[-1] # number of atom features used in embedding (92 in atom_init)
+        nbr_fea_len = structures[1].shape[-1] # number of neighbor features used (depends on filter --> dmin, dmax, step)
         model = CrystalGraphConvNet(orig_atom_fea_len, nbr_fea_len,
                                     classification=(self.config['task']=='classification'), 
                                     **self.config['model']

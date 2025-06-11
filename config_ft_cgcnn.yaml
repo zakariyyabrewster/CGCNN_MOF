@@ -24,10 +24,8 @@ data_name: 'QMOF'
 # data_name: 'hMOF_CO2_0.5'
 
 dataset:
-  # root_dir: ./hMOF_cif
-  # label_dir: ./benchmark_datasets/hMOF/graph/large/hMOF_CO2_0.5_large_graph.csv
-  root_dir: ./QMOF_cg
-  label_dir: ./benchmark_datasets/QMOF/graph/large/QMOF_large_graph.csv
+  root_dir: ./test_datasets/CoRE2019
+  label_dir: ./test_datasets/id_Di.csv
 
   max_num_nbr: 12
   radius: 8

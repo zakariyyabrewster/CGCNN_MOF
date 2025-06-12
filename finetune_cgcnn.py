@@ -329,7 +329,7 @@ class FineTune(object):
                 # compute output
                 output, _ = self.model(*input_var)
         
-                loss = self.criterion(output, target_var)
+                loss = self.criterion(output, target_var) # MSE Loss
 
                 mae_error = mae(self.normalizer.denorm(output.data.cpu()), target)
                 losses.update(loss.data.cpu().item(), target.size(0))
@@ -351,6 +351,7 @@ class FineTune(object):
 
         with open(os.path.join(self.writer.log_dir, 'test_results.csv'), 'w') as f:
             writer = csv.writer(f)
+            writer.writerow(['cif_id', 'target', 'pred'])
             for cif_id, target, pred in zip(test_cif_ids, test_targets,
                                             test_preds):
                 writer.writerow((cif_id, target, pred))
@@ -406,9 +407,10 @@ if __name__ == "__main__":
     fine_tune.train()
     loss, metric = fine_tune.test()
 
-    fn = 'CGCNN_{}_{}_{}_{}.csv'.format(ftf,task_name,seed, target_property)
-    df = pd.DataFrame([[loss, metric.item()]])
+    fn = 'CGCNN_{}_{}_{}_{}.csv'.format(ftf,task_name,seed,target_property)
+    df = pd.DataFrame([[loss, metric.item()]], 
+                      columns=['MSE Loss', 'MAE Loss'])
     df.to_csv(
         os.path.join(log_dir, fn),
-        mode='a', index=False, header=False
+        mode='a', index=False, header=True
     )

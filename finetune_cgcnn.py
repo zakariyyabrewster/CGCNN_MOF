@@ -96,7 +96,7 @@ class FineTune(object):
     def train(self):
         structures, _, _ = self.dataset[0] # dataset[0] = (atom_fea, nbr_fea, nbr_fea_idx)
         orig_atom_fea_len = structures[0].shape[-1] # number of atom features used in embedding (92 in atom_init)
-        nbr_fea_len = structures[1].shape[-1] # number of neighbor features used (depends on filter --> dmin, dmax, step)
+        nbr_fea_len = structures[1].shape[-1] # number of neighbor features used (depends on filter --> np.arange(dmin, dmax+step, step))
         model = CrystalGraphConvNet(orig_atom_fea_len, nbr_fea_len,
                                     classification=(self.config['task']=='classification'), 
                                     **self.config['model']
@@ -113,19 +113,20 @@ class FineTune(object):
         for name, param in model.named_parameters():
             if 'fc_out' in name:
                 print(name, 'new layer')
-                layer_list.append(name)
-        params = list(map(lambda x: x[1],list(filter(lambda kv: kv[0] in layer_list, model.named_parameters()))))
-        base_params = list(map(lambda x: x[1],list(filter(lambda kv: kv[0] not in layer_list, model.named_parameters()))))
+                layer_list.append(name) # grab fc_out layers --> transfer learning (finetune) if using pretrained model
+        params = list(map(lambda x: x[1],list(filter(lambda kv: kv[0] in layer_list, model.named_parameters())))) # params for fc_out layers 
+        base_params = list(map(lambda x: x[1],list(filter(lambda kv: kv[0] not in layer_list, model.named_parameters())))) # params for conv layers + hidden fc layers
+
 
         if self.config['optim']['optimizer'] == 'SGD':
             optimizer = optim.SGD(
-                [{'params': base_params, 'lr': self.config['optim']['lr']*0.2}, {'params': params}],
+                [{'params': base_params, 'lr': self.config['optim']['lr']*0.2}, {'params': params}], # separate base params and fc_out params to have different learning rates
                  self.config['optim']['lr'], momentum=self.config['optim']['momentum'], 
                 weight_decay=eval(self.config['optim']['weight_decay'])
             )
         elif self.config['optim']['optimizer'] == 'Adam':
             lr_multiplier = 0.2
-            if 'scratch' in self.config['fine_tune_from']:
+            if 'scratch' in self.config['fine_tune_from']: # no difference in lr when ftf scratch --> more training required, larger lr for efficiency
                 lr_multiplier = 1
             optimizer = optim.Adam(
                 [{'params': base_params, 'lr': self.config['optim']['lr']*lr_multiplier}, {'params': params}],

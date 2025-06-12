@@ -357,7 +357,7 @@ class CIFData(Dataset):
     """
     def __init__(self,task, root_dir, label_dir, max_num_nbr=12, radius=8, dmin=0, step=0.2,
                  random_seed=123):
-        self.root_dir = root_dir
+        self.root_dir = root_dir # CoRE-2019 structures dataset has 12024 structures, full_CoRE2019_alldata.csv only has 9525 structures
         self.task = task
         self.max_num_nbr, self.radius = max_num_nbr, radius
         assert os.path.exists(root_dir), 'root_dir does not exist!'
@@ -382,9 +382,9 @@ class CIFData(Dataset):
 
     @functools.lru_cache(maxsize=None)  # Cache loaded structures
     def __getitem__(self, idx):
-        cif_id, target = self.id_prop_data[idx]
+        cif_id, target = self.id_prop_data[idx] # pulls from id_prop file, not root dir
         crystal = Structure.from_file(os.path.join(self.root_dir,
-                                                   cif_id+'.cif'))
+                                                   cif_id+'.cif')) # if structure DNE in id_prop, will not be added to dataset
 
         atom_fea = np.vstack([self.ari.get_atom_fea(crystal[i].specie.number)
                               for i in range(len(crystal))])

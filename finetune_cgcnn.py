@@ -23,7 +23,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
 from dataset.dataset_finetune_cgcnn import CIFData, CGData
-from dataset.dataset_finetune_cgcnn import collate_pool, get_train_val_test_loader
+from dataset.dataset_finetune_cgcnn import collate_pool, get_train_val_test_loader, subset_train_val_test_loader
 from model.cgcnn_finetune import CrystalGraphConvNet
 
 import warnings
@@ -59,15 +59,24 @@ class FineTune(object):
         # self.dataset = CGData(self.config['task'], **self.config['dataset'], shuffle=False)
         self.random_seed = self.config['random_seed']
         collate_fn = collate_pool
-        self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader(
+        self.train_loader, self.valid_loader = subset_train_val_test_loader(
             dataset = self.dataset,
             random_seed = self.random_seed,
             collate_fn = collate_fn,
             pin_memory = self.config['gpu'] != 'cpu',
             batch_size = self.config['batch_size'], 
-            return_test = True,
+            return_test = False,
             **self.config['dataloader']
         )
+        # self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader(
+        #     dataset = self.dataset,
+        #     random_seed = self.random_seed,
+        #     collate_fn = collate_fn,
+        #     pin_memory = self.config['gpu'] != 'cpu',
+        #     batch_size = self.config['batch_size'], 
+        #     return_test = True,
+        #     **self.config['dataloader']
+        # )
 
         # obtain target value normalizer
         if len(self.dataset) < 500:
@@ -94,6 +103,7 @@ class FineTune(object):
         return device
 
     def train(self):
+        print("Training CGCNN on {} for {}...".format(self.config['data_name'], self.config['target_property']))
         structures, _, _ = self.dataset[0] # dataset[0] = (atom_fea, nbr_fea, nbr_fea_idx)
         orig_atom_fea_len = structures[0].shape[-1] # number of atom features used in embedding (92 in atom_init)
         nbr_fea_len = structures[1].shape[-1] # number of neighbor features used (depends on filter --> np.arange(dmin, dmax+step, step))
@@ -112,7 +122,7 @@ class FineTune(object):
         layer_list = []
         for name, param in model.named_parameters():
             if 'fc_out' in name:
-                print(name, 'new layer')
+                # print(name, 'new layer')
                 layer_list.append(name) # grab fc_out layers --> transfer learning (finetune) if using pretrained model
         params = list(map(lambda x: x[1],list(filter(lambda kv: kv[0] in layer_list, model.named_parameters())))) # params for fc_out layers 
         base_params = list(map(lambda x: x[1],list(filter(lambda kv: kv[0] not in layer_list, model.named_parameters())))) # params for conv layers + hidden fc layers

@@ -112,7 +112,8 @@ def subset_train_val_test_loader(dataset, collate_fn=default_collate,
                               return_test=False, num_workers=1, pin_memory=False, subset_size = 500,
                               **kwargs):
 
-    total_size = len(dataset)
+    # total_size = len(dataset)
+    total_size = subset_size
     train_ratio = 1 - val_ratio - test_ratio
     indices = list(range(total_size))
     print("The random seed is: ", random_seed)
@@ -122,14 +123,14 @@ def subset_train_val_test_loader(dataset, collate_fn=default_collate,
     train_size = int(train_ratio * total_size)
     valid_size = int(val_ratio * total_size)
     test_size = int(test_ratio * total_size)
-    subset_idx = np.random.choice(indices[:train_size], size=subset_size, replace=False)
+    # subset_idx = np.random.choice(indices[:train_size], size=subset_size, replace=False)
 
     print('Train size: {}, Validation size: {}, Test size: {}'.format(
-        len(subset_idx), valid_size, test_size
+        train_size, valid_size, test_size
     ))
     
     # train_sampler = SubsetRandomSampler(indices[:train_size])
-    train_sampler = SubsetRandomSampler(subset_idx)
+    train_sampler = SubsetRandomSampler(indices[:train_size])
     val_sampler = SubsetRandomSampler(
         indices[-(valid_size + test_size):-test_size])
     if return_test:
@@ -366,6 +367,7 @@ class CIFData(Dataset):
         assert os.path.exists(id_prop_file), 'id_prop_hmof.csv does not exist!'
         with open(id_prop_file) as f:
             reader = csv.reader(f)
+            next(reader)  # Skip header
             self.id_prop_data = [row for row in reader]
         self.id_prop_data = self.id_prop_data
         random.seed(random_seed)

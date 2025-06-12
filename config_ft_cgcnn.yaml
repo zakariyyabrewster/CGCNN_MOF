@@ -40,5 +40,6 @@ dataloader:
   val_ratio: 0.15
   test_ratio: 0.15
   num_workers: 0
+  subset_size: 500
 
 

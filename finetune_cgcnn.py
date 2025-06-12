@@ -59,7 +59,7 @@ class FineTune(object):
         # self.dataset = CGData(self.config['task'], **self.config['dataset'], shuffle=False)
         self.random_seed = self.config['random_seed']
         collate_fn = collate_pool
-        self.train_loader, self.valid_loader = subset_train_val_test_loader(
+        self.train_loader, self.valid_loader, self.test_loader = subset_train_val_test_loader(
             dataset = self.dataset,
             random_seed = self.random_seed,
             collate_fn = collate_fn,

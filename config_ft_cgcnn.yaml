@@ -19,6 +19,7 @@ model:
   h_fea_len: 512
   n_conv: 3
   n_h: 1
+  drop_ratio: 0.2
 
 data_name: 'CoRE2019'
 # data_name: 'hMOF_CO2_0.5'

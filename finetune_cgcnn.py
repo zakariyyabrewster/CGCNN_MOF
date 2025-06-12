@@ -238,6 +238,7 @@ class FineTune(object):
     def _validate(self, model, valid_loader, n_epoch):
         losses = AverageMeter()
         mae_errors = AverageMeter()
+        print('Validating model at epoch {0}...'.format(n_epoch+1))
 
         with torch.no_grad():
             model.eval()

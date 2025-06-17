@@ -11,9 +11,9 @@
 REPO_DIR=/home/brewst27/projects/def-moosavi5/brewst27/CGCNN_MOF
 cd $REPO_DIR
 
-module load python/3.13.2
-module load cuda/12.2
-module load cudnn/
+module load python/3.11.5
+module load cuda/11.8.0
+module load cudnn/8.7.0.84
 
 source $REPO_DIR/myenv/bin/activate
 

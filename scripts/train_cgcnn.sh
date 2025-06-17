@@ -5,7 +5,7 @@ cd "$DIR" # root/scripts
 cd .. # root
 
 # TARGETS=("Di" "CH4_HP" "CO2_LP" "logKH_CO2")
-TARGETS=$@
+TARGETS=("$@") # Accept target properties as command line arguments
 
 # Loop over target properties
 for TARGET in "${TARGETS[@]}"; do

@@ -14,8 +14,6 @@ for TARGET in "${TARGETS[@]}"; do
     echo "=============================="
 
     # Run training script with the current target_property
-    python finetune_cgcnn.py --config config_ft_cgcnn.yaml --target_prop $TARGET
-
+    python fintune_cgcnn.py --target_property $TARGET
     echo "Finished training on target: $TARGET"
-    echo ""
 done

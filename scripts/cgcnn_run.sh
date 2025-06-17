@@ -8,9 +8,14 @@
 #SBATCH --time=0-00:30
 #SBATCH --gres=gpu:1
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$DIR" # root/scripts
-cd .. # root
+REPO_DIR=/home/brewst27/projects/def-moosavi5/brewst27/CGCNN_MOF
+cd $REPO_DIR
+
+module load python/3.13.2
+module load cuda/12.2
+module load cudnn/
+
+source $REPO_DIR/myenv/bin/activate
 
 bash scripts/extract_db.sh # extract tar file of CoRE2019 
 bash scripts/train_cgcnn.sh Di # train model on Di

@@ -8,6 +8,8 @@
 #SBATCH --time=0-00:30
 #SBATCH --gres=gpu:1
 
+cd $SLURM_SUBMIT_DIR
+
 module load python/3.11.5
 module load cuda/11.8.0
 module load cudnn/8.7.0.84

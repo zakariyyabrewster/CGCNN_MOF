@@ -1,8 +1,5 @@
 #!/bin/bash
 
-REPO_DIR=/home/brewst27/projects/def-moosavi5/brewst27/CGCNN_MOF
-cd $REPO_DIR
-
 # TARGETS=("Di" "CH4_HP" "CO2_LP" "logKH_CO2")
 TARGETS=("$@") # Accept target properties as command line arguments
 

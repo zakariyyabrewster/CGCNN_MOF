@@ -3,7 +3,7 @@ epochs: 60
 eval_every_n_epochs: 1
 # fine_tune_from: ./training_results/pretraining
 fine_tune_from: scratch
-log_every_n_steps: 50
+log_every_n_steps: 10
 gpu: cuda:0
 random_seed: 1
 task: regression
@@ -16,7 +16,7 @@ optim:
 
 model: 
   atom_fea_len: 64
-  h_fea_len: 512
+  h_fea_len: 128
   n_conv: 3
   n_h: 1
   drop_ratio: 0.2

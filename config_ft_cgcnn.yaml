@@ -22,7 +22,6 @@ model:
   drop_ratio: 0.2
 
 data_name: 'CoRE2019'
-# data_name: 'hMOF_CO2_0.5'
 
 target_property: Di
 

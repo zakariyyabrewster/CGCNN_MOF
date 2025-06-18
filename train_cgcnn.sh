@@ -1,8 +1,7 @@
 #!/bin/bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$DIR" # root/scripts
-cd .. # root
+REPO_DIR=/home/brewst27/projects/def-moosavi5/brewst27/CGCNN_MOF
+cd $REPO_DIR
 
 # TARGETS=("Di" "CH4_HP" "CO2_LP" "logKH_CO2")
 TARGETS=("$@") # Accept target properties as command line arguments
@@ -14,6 +13,6 @@ for TARGET in "${TARGETS[@]}"; do
     echo "=============================="
 
     # Run training script with the current target_property
-    python fintune_cgcnn.py --target_property $TARGET
+    python finetune_cgcnn.py --target_property $TARGET
     echo "Finished training on target: $TARGET"
 done

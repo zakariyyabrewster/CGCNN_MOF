@@ -17,5 +17,5 @@ module load cudnn/8.7.0.84
 
 source $REPO_DIR/myenv/bin/activate
 
-bash scripts/extract_db.sh # extract tar file of CoRE2019 
-bash scripts/train_cgcnn.sh Di # train model on Di
+bash extract_db.sh # extract tar file of CoRE2019 
+bash train_cgcnn.sh Di # train model on Di

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$DIR" # root/scripts
-cd .. # root
+REPO_DIR=/home/brewst27/projects/def-moosavi5/brewst27/CGCNN_MOF
+
+cd $REPO_DIR
 
 
 # Create the target directory if it doesn't exist

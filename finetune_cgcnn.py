@@ -345,7 +345,7 @@ class FineTune(object):
             print('Test: [{0}/{1}], '
                     'Loss {loss.val:.4f} ({loss.avg:.4f}), '
                     'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
-                bn, len(self.valid_loader), loss=losses,
+                bn+1, len(self.valid_loader), loss=losses,
                 mae_errors=mae_errors))
 
 

@@ -366,14 +366,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Crystal Graph Convolutional Neural Networks')
     parser.add_argument('--seed', default=1, type=int,
                         metavar='Seed', help='random seed for splitting data (default: 1)')
-    parser.add_argument('--target_prop', type=str, help="Target property to override in config", default='Di')
+    parser.add_argument('--target_property', type=str, help="Target property to override in config", default='Di')
 
     args = parser.parse_args(sys.argv[1:])
 
     config = yaml.load(open("config_ft_cgcnn.yaml", "r"), Loader=yaml.FullLoader)
     print(config)
     config['random_seed'] = args.seed
-    config['target_property'] = args.target_prop
+    config['target_property'] = args.target_property
     
     # if 'hMOF' in config['data_name']:
     #     # task_name = 'hMOF'

@@ -2,3 +2,4 @@
 *vscode_
 .ipynb_checkpoints
 test_datasets/CoRE2019/*.cif
+slurm-*.out

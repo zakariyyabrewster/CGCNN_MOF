@@ -1,4 +1,4 @@
-batch_size: 128
+batch_size: 32
 epochs: 60
 eval_every_n_epochs: 1
 # fine_tune_from: ./training_results/pretraining

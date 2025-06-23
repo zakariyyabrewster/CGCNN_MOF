@@ -1,4 +1,5 @@
 *__pycache__*
 *vscode_
 .ipynb_checkpoints
-training_results
+test_datasets/CoRE2019/*.cif
+slurm-*.out

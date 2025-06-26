@@ -60,17 +60,7 @@ class FineTune(object):
         self.random_seed = self.config['random_seed']
         collate_fn = collate_pool
         
-        # self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader(
-        #     dataset = self.dataset,
-        #     random_seed = self.random_seed,
-        #     collate_fn = collate_fn,
-        #     pin_memory = self.config['gpu'] != 'cpu',
-        #     batch_size = self.config['batch_size'], 
-        #     return_test = True,
-        #     **self.config['dataloader']
-        # )
-
-        self.train_loader, self.valid_loader, self.test_loader = subset_train_val_test_loader(
+        self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader(
             dataset = self.dataset,
             random_seed = self.random_seed,
             collate_fn = collate_fn,
@@ -79,6 +69,16 @@ class FineTune(object):
             return_test = True,
             **self.config['dataloader']
         )
+
+        # self.train_loader, self.valid_loader, self.test_loader = subset_train_val_test_loader(
+        #     dataset = self.dataset,
+        #     random_seed = self.random_seed,
+        #     collate_fn = collate_fn,
+        #     pin_memory = self.config['gpu'] != 'cpu',
+        #     batch_size = self.config['batch_size'], 
+        #     return_test = True,
+        #     **self.config['dataloader']
+        # )
 
         # obtain target value normalizer
         if len(self.dataset) < 500:

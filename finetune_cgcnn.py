@@ -349,7 +349,7 @@ class FineTune(object):
                 mae_errors=mae_errors))
 
 
-        with open(os.path.join(self.writer.log_dir, 'test_results.csv'), 'w') as f:
+        with open(os.path.join(self.writer.log_dir, 'test_results_{}.csv'.format(target_property)), 'w') as f:
             writer = csv.writer(f)
             writer.writerow(['cif_id', 'target', 'pred'])
             for cif_id, target, pred in zip(test_cif_ids, test_targets,

@@ -31,7 +31,7 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class regressoionHead(nn.Module):
+class RegressionHead(nn.Module):
 
     def __init__(self, d_embedding: int):
         super().__init__()
@@ -96,7 +96,7 @@ class TransformerRegressor(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.transformer = transformer
-        self.regressionHead = regressoionHead(d_model)
+        self.regressionHead = RegressionHead(d_model)
 
         # self.init_weights()
 

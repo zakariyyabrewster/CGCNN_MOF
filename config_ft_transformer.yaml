@@ -22,9 +22,11 @@ dataloader:
   use_ratio: 1
   randomSeed: 1
 
+target_property: Di
+
 dataset:
-  data_name: 'CoRE2019'
-  dataPath: './test_datasets/CoRE2019'
+  data_name: CoRE2019
+  dataPath: ./test_datasets/mofid_{target_property}.csv
 
 Transformer:
   ntoken: 4021

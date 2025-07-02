@@ -54,10 +54,19 @@ class FineTune(object):
         # self.mofdata = np.load(self.config['dataset']['dataPath'], allow_pickle=True)
         with open(self.config['dataset']['dataPath']) as f:
             reader = csv.reader(f)
+            reader = next(reader)  # Skip header
             self.mofdata = [row for row in reader]
         self.mofdata = np.array(self.mofdata)
         self.vocab_path = self.config['vocab_path']
         self.tokenizer = MOFTokenizer(self.vocab_path, model_max_length = 512, padding_side='right')
+
+        # Lookup table for MOFID and MOFname
+        df = pd.read_csv(self.config['dataset']['dataPath'])
+        df["MOFID"] = df["MOFID"].astype(str)
+        df["MOFname"] = df["MOFname"].astype(str)
+
+        self.mofid_to_mofname = dict(zip(df["MOFID"], df["MOFname"]))
+
 
 
         self.train_data, self.valid_data, self.test_data = split_data(
@@ -263,7 +272,7 @@ class FineTune(object):
     
     def test(self):
         # test steps
-        print('Test on test set')
+        print("Testing CGCNN on {} for {}...".format(self.config['data_name'], self.config['target_property']))
         model_path = os.path.join(self.writer.log_dir, 'checkpoints', 'model.pth')
         print(model_path)
         state_dict = torch.load(model_path, map_location=self.device)
@@ -302,7 +311,17 @@ class FineTune(object):
                 test_pred = self.normalizer.denorm(output.data.cpu())
                 test_target = target
                 test_preds += test_pred.view(-1).tolist()
-                test_targets += test_target.view(-1).tolist()
+                test_targets += test_target.view(-1).tolist()\
+                
+                batch_size = inputs.size(0)
+                start_idx = bn * self.test_loader.batch_size
+                end_idx = start_idx + batch_size
+
+                batch_mofids = self.test_loader.dataset.mofid[start_idx:end_idx]
+                batch_mofnames = [self.mofid_to_mofname.get(mid, "UNKNOWN") for mid in batch_mofids]
+                test_cif_ids.extend(batch_mofnames)
+
+
 
             print('Test: [{0}/{1}], '
                     'Loss {loss.val:.4f} ({loss.avg:.4f}), '
@@ -311,13 +330,14 @@ class FineTune(object):
                 mae_errors=mae_errors))
             
 
-        with open(os.path.join(self.writer.log_dir, 'test_results.csv'), 'w') as f:
+        with open(os.path.join(self.writer.log_dir, 'test_results_{}.csv'.format(target_property)), 'w') as f:
             writer = csv.writer(f)
-            # for cif_id, target, pred in zip(test_cif_ids, test_targets,
-            #                                 test_preds):
-            #     writer.writerow((cif_id, target, pred))
-            for target, pred in zip(test_targets, test_preds):
-                writer.writerow((target, pred))
+            writer.writerow(['cif_id', 'target', 'pred'])
+            for cif_id, target, pred in zip(test_cif_ids, test_targets,
+                                            test_preds):
+                writer.writerow((cif_id, target, pred))
+            # for target, pred in zip(test_targets, test_preds):
+            #     writer.writerow((target, pred))
         
         self.model.train()
 
@@ -329,12 +349,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Transformer finetuning')
     parser.add_argument('--seed', default=1, type=int,
                         metavar='Seed', help='random seed for splitting data (default: 1)')
+    parser.add_argument('--target_property', type=str, help="Target property to override in config", default='Di')
 
     args = parser.parse_args(sys.argv[1:])
 
     config = yaml.load(open("config_ft_transformer.yaml", "r"), Loader=yaml.FullLoader)
     print(config)
     config['dataloader']['randomSeed'] = args.seed
+    config['target_property'] = args.target_property
 
     if 'hMOF' in config['dataset']['data_name']:
         # task_name = 'hMOF'
@@ -353,10 +375,11 @@ if __name__ == "__main__":
         ptw = config['trained_with']
 
     seed = config['dataloader']['randomSeed']
+    target_property = config['target_property']
 
     log_dir = os.path.join(
         'training_results/finetuning/Transformer',
-        'Trans_{}_{}_{}'.format(ptw,task_name,seed)
+        'Trans_{}_{}_{}_{}'.format(ptw,task_name,seed,target_property)
     )
 
     if not os.path.exists(log_dir):
@@ -367,10 +390,11 @@ if __name__ == "__main__":
     loss, metric = fine_tune.test()
 
     # fn = 'Trans_{}_{}_{}.csv'.format(ftf, task_name,seed)
-    fn = 'Trans_{}_{}_{}.csv'.format(ptw,task_name,seed)
+    fn = 'Trans_{}_{}_{}_{}.csv'.format(ptw,task_name,seed, target_property)
     print(fn)
-    df = pd.DataFrame([[loss, metric.item()]])
+    df = pd.DataFrame([[loss, metric.item()]], 
+                      columns=['MSE Loss', 'MAE Loss'])
     df.to_csv(
         os.path.join(log_dir, fn),
-        mode='a', index=False, header=False
+        mode='a', index=False, header=True
     )

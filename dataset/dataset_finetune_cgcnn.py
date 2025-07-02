@@ -482,3 +482,92 @@ class CGData(Dataset):
             target = torch.Tensor([float(label)])
         
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
+    
+
+def kget_train_val_test_loader(dataset, collate_fn=default_collate,
+                              batch_size=64,random_seed = 2, val_ratio=0.1, test_ratio=0.1, 
+                              return_test=False, num_workers=1, pin_memory=False, 
+                              **kwargs):
+    """
+    Utility function for dividing a dataset to train, val, test datasets.
+
+    !!! The dataset needs to be shuffled before using the function !!!
+
+    Parameters
+    ----------
+    dataset: torch.utils.data.Dataset
+      The full dataset to be divided.
+    collate_fn: torch.utils.data.DataLoader
+    batch_size: int
+    train_ratio: float
+    val_ratio: float
+    test_ratio: float
+    return_test: bool
+      Whether to return the test dataset loader. If False, the last test_size
+      data will be hidden.
+    num_workers: int
+    pin_memory: bool
+
+    Returns
+    -------
+    train_loader: torch.utils.data.DataLoader
+      DataLoader that random samples the training data.
+    val_loader: torch.utils.data.DataLoader
+      DataLoader that random samples the validation data.
+    (test_loader): torch.utils.data.DataLoader
+      DataLoader that random samples the test data, returns if
+        return_test=True.
+    """
+    total_size = len(dataset)
+    # if train_ratio is None:
+    #     assert val_ratio + test_ratio < 1
+    #     train_ratio = 1 - val_ratio - test_ratio
+    #     # print('[Warning] train_ratio is None, using all training data.')
+    # else:
+    #     assert train_ratio + val_ratio + test_ratio <= 1
+    train_ratio = 1 - val_ratio - test_ratio
+    indices = list(range(total_size))
+    print("The random seed is: ", random_seed)
+    np.random.seed(random_seed)
+    np.random.shuffle(indices)
+    # if kwargs['train_size']:
+    #     train_size = kwargs['train_size']
+    # else:
+    #     train_size = int(train_ratio * total_size)
+    # if kwargs['test_size']:
+    #     test_size = kwargs['test_size']
+    # else:
+    #     test_size = int(test_ratio * total_size)
+    # if kwargs['val_size']:
+    #     valid_size = kwargs['val_size']
+    # else:
+    #     valid_size = int(val_ratio * total_size)
+    train_size = int(train_ratio * total_size)
+    valid_size = int(val_ratio * total_size)
+    test_size = int(test_ratio * total_size)
+    print('Train size: {}, Validation size: {}, Test size: {}'.format(
+        train_size, valid_size, test_size
+    ))
+    
+    train_sampler = SubsetRandomSampler(indices[:train_size])
+    val_sampler = SubsetRandomSampler(
+        indices[-(valid_size + test_size):-test_size])
+    if return_test:
+        test_sampler = SubsetRandomSampler(indices[-test_size:])
+    train_loader = DataLoader(dataset, batch_size=batch_size,
+                              sampler=train_sampler,
+                              num_workers=num_workers,
+                              collate_fn=collate_fn, pin_memory=pin_memory)
+    val_loader = DataLoader(dataset, batch_size=batch_size,
+                            sampler=val_sampler,
+                            num_workers=num_workers,
+                            collate_fn=collate_fn, pin_memory=pin_memory)
+    if return_test:
+        test_loader = DataLoader(dataset, batch_size=batch_size,
+                                 sampler=test_sampler,
+                                 num_workers=num_workers,
+                                 collate_fn=collate_fn, pin_memory=pin_memory)
+    if return_test:
+        return train_loader, val_loader, test_loader
+    else:
+        return train_loader, val_loader

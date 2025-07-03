@@ -357,13 +357,8 @@ if __name__ == "__main__":
     print(config)
     config['dataloader']['randomSeed'] = args.seed
     config['target_property'] = args.target_property
-
-    if 'hMOF' in config['dataset']['data_name']:
-        # task_name = 'hMOF'
-        task_name = config['dataset']['data_name']
-        pressure = config['dataset']['data_name'].split('_')[-1]
-    if 'QMOF' in config['dataset']['data_name']:
-        task_name = 'QMOF'
+    
+    task_name = config['dataset']['data_name']
 
     # ftf: finetuning from
     # ptw: pre-trained with

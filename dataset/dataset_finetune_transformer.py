@@ -50,7 +50,6 @@ class MOF_ID_Dataset(Dataset):
             self.mofid = self.data[:, 0].astype(str)
             self.tokens = np.array([tokenizer.encode(i, max_length=512, truncation=True,padding='max_length') for i in self.mofid])
             self.label = self.data[:, 1].astype(float)
-            self.mofname = self.data[:, 2].astype(str)
 
             self.tokenizer = tokenizer
 

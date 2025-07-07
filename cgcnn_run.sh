@@ -15,9 +15,8 @@ module load gcc/12.3
 module load r-bundle-bioconductor/3.20
 module load python/3.11.5
 module load cudacore/.12.6.2
-module load cuda/12.6.0
+module load cuda/12.6
 module load cudnn/9.5.1.17
-module load yaml/2.3.10
 
 
 source myenv/bin/activate

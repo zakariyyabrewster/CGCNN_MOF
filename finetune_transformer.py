@@ -1,6 +1,6 @@
 
 from tokenizer.mof_tokenizer import MOFTokenizer
-from model.transformer import TransformerRegressor, Transformer, regressoionHead
+from model.transformer import TransformerRegressor, Transformer, RegressionHead
 from model.utils import *
 from datetime import datetime, timedelta
 from time import time

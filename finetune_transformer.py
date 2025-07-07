@@ -275,7 +275,7 @@ class FineTune(object):
     
     def test(self):
         # test steps
-        print("Testing CGCNN on {} for {}...".format(self.config['data_name'], self.config['target_property']))
+        print("Testing Transformer on {} for {}...".format(self.config['dataset']['data_name'], self.config['target_property']))
         model_path = os.path.join(self.writer.log_dir, 'checkpoints', 'model.pth')
         print(model_path)
         state_dict = torch.load(model_path, map_location=self.device)

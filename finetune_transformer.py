@@ -57,7 +57,7 @@ class FineTune(object):
         self.config['dataset']['dataPath'] = new_dataPath
         with open(self.config['dataset']['dataPath']) as f:
             reader = csv.reader(f)
-            reader = next(reader)  # Skip header
+            next(reader)  # Skip header
             self.mofdata = [row for row in reader]
         self.mofdata = np.array(self.mofdata)
         self.vocab_path = self.config['vocab_path']

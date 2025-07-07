@@ -52,6 +52,9 @@ class FineTune(object):
         self.random_seed = self.config['dataloader']['randomSeed']
 
         # self.mofdata = np.load(self.config['dataset']['dataPath'], allow_pickle=True)
+        dataPathTemp = self.config['dataset']['dataPath']
+        new_dataPath = dataPathTemp.format(target_property=self.config['target_property'])
+        self.config['dataset']['dataPath'] = new_dataPath
         with open(self.config['dataset']['dataPath']) as f:
             reader = csv.reader(f)
             reader = next(reader)  # Skip header

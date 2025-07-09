@@ -54,6 +54,7 @@ class KCV_CGCNN(object):
         new_config = self.config['dataset'].copy()
         new_config['label_dir'] = new_label_dir
         new_config.pop('label_dir_template', None)
+        new_config.pop('fold_dir', None)
 
         self.dataset = CIFData(self.config['task'], **new_config) # use this if you dont have .npz files of preloaded crystal graphs
         # self.dataset = CGData(self.config['task'], **self.config['dataset'], shuffle=False)
@@ -191,7 +192,7 @@ class KCV_CGCNN(object):
                 if valid_mae < best_valid_mae:
                     # save the model weights
                     best_valid_mae = valid_mae
-                    torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, f'model_fold{self.config['fold']}.pth'))
+                    torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, f'model_fold{self.config['dataloader']['fold']}.pth'))
 
                 self.writer.add_scalar('valid_loss', valid_loss, global_step=valid_n_iter)
                 valid_n_iter += 1
@@ -380,18 +381,18 @@ if __name__ == "__main__":
 
     fold_results = []
 
-    num_folds = config['num_folds']
+    num_folds = config['dataloader']['num_folds']
     for fold in range(num_folds):
         print("Fold {}".format(fold))
-        config['fold'] = fold
+        config['dataloader']['fold'] = fold
 
         train_names = pd.read_csv(os.path.join(fold_dir, 'train_val', f"fold_{fold}_train.csv"))['MOFname'].tolist()
         valid_names = pd.read_csv(os.path.join(fold_dir, 'train_val', f"fold_{fold}_val.csv"))['MOFname'].tolist()
         test_names = pd.read_csv(os.path.join(fold_dir, 'test_holdout.csv'))['MOFname'].tolist()
 
-        config['dataset']['train_mofnames'] = train_names
-        config['dataset']['val_mofnames'] = valid_names
-        config['dataset']['test_mofnames'] = test_names
+        config['dataloader']['train_mofnames'] = train_names
+        config['dataloader']['val_mofnames'] = valid_names
+        config['dataloader']['test_mofnames'] = test_names
 
         log_dir = os.path.join(
             'training_results/finetuning/CGCNN_CV',

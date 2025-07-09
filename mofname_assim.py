@@ -1,3 +1,9 @@
+'''
+This script processes the CoRE2019 dataset to ensure that all generated files contain consistent MOF names across different property files.
+It reads the MOF names from various sources, identifies common names, splits them into training and testing sets, and generates K-Fold cross-validation splits for training and validation.
+Finally, it creates CSV files for each property with both MOF names and their corresponding properties.
+'''
+
 import pandas as pd
 from sklearn.model_selection import KFold, train_test_split
 import os

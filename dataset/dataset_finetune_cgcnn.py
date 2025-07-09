@@ -484,90 +484,69 @@ class CGData(Dataset):
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
     
 
-def kget_train_val_test_loader(dataset, collate_fn=default_collate,
-                              batch_size=64,random_seed = 2, val_ratio=0.1, test_ratio=0.1, 
-                              return_test=False, num_workers=1, pin_memory=False, 
-                              **kwargs):
+def kcv_loader(dataset, collate_fn=default_collate,
+                                 batch_size=64, random_seed=2,
+                                 return_test=False, num_workers=1, pin_memory=False,
+                                 **kwargs):
     """
-    Utility function for dividing a dataset to train, val, test datasets.
-
-    !!! The dataset needs to be shuffled before using the function !!!
+    Create data loaders using pre-defined train/val/test MOFname splits.
 
     Parameters
     ----------
-    dataset: torch.utils.data.Dataset
-      The full dataset to be divided.
-    collate_fn: torch.utils.data.DataLoader
-    batch_size: int
-    train_ratio: float
-    val_ratio: float
-    test_ratio: float
-    return_test: bool
-      Whether to return the test dataset loader. If False, the last test_size
-      data will be hidden.
-    num_workers: int
-    pin_memory: bool
+    dataset : CIFData
+        Full dataset (with dataset.df containing 'MOFname' column).
+    collate_fn : function
+        Function to collate data batches.
+    batch_size : int
+        Batch size for DataLoader.
+    random_seed : int
+        Not used here, but retained for logging/debugging.
+    return_test : bool
+        Whether to return a test_loader.
+    num_workers : int
+        Number of subprocesses to use for data loading.
+    pin_memory : bool
+        Whether to copy tensors into CUDA pinned memory.
+    kwargs : dict
+        Should contain 'train_mofnames', 'val_mofnames', and optionally 'test_mofnames'.
 
     Returns
     -------
-    train_loader: torch.utils.data.DataLoader
-      DataLoader that random samples the training data.
-    val_loader: torch.utils.data.DataLoader
-      DataLoader that random samples the validation data.
-    (test_loader): torch.utils.data.DataLoader
-      DataLoader that random samples the test data, returns if
-        return_test=True.
+    train_loader, val_loader [, test_loader]
     """
-    total_size = len(dataset)
-    # if train_ratio is None:
-    #     assert val_ratio + test_ratio < 1
-    #     train_ratio = 1 - val_ratio - test_ratio
-    #     # print('[Warning] train_ratio is None, using all training data.')
-    # else:
-    #     assert train_ratio + val_ratio + test_ratio <= 1
-    train_ratio = 1 - val_ratio - test_ratio
-    indices = list(range(total_size))
-    print("The random seed is: ", random_seed)
-    np.random.seed(random_seed)
-    np.random.shuffle(indices)
-    # if kwargs['train_size']:
-    #     train_size = kwargs['train_size']
-    # else:
-    #     train_size = int(train_ratio * total_size)
-    # if kwargs['test_size']:
-    #     test_size = kwargs['test_size']
-    # else:
-    #     test_size = int(test_ratio * total_size)
-    # if kwargs['val_size']:
-    #     valid_size = kwargs['val_size']
-    # else:
-    #     valid_size = int(val_ratio * total_size)
-    train_size = int(train_ratio * total_size)
-    valid_size = int(val_ratio * total_size)
-    test_size = int(test_ratio * total_size)
-    print('Train size: {}, Validation size: {}, Test size: {}'.format(
-        train_size, valid_size, test_size
-    ))
-    
-    train_sampler = SubsetRandomSampler(indices[:train_size])
-    val_sampler = SubsetRandomSampler(
-        indices[-(valid_size + test_size):-test_size])
-    if return_test:
-        test_sampler = SubsetRandomSampler(indices[-test_size:])
+
+    train_mofnames = kwargs.get('train_mofnames')
+    val_mofnames = kwargs.get('val_mofnames')
+    test_mofnames = kwargs.get('test_mofnames')
+
+    assert train_mofnames is not None and val_mofnames is not None, "Train and Val MOFname lists must be provided."
+
+    print("Using pre-defined MOFname splits.")
+    print(f"Random seed: {random_seed}")
+
+    # Map MOFname → dataset index
+    name_to_idx = {dataset.df.iloc[i]['MOFname']: i for i in range(len(dataset))}
+
+    train_idx = [name_to_idx[name] for name in train_mofnames if name in name_to_idx]
+    val_idx = [name_to_idx[name] for name in val_mofnames if name in name_to_idx]
+    test_idx = [name_to_idx[name] for name in test_mofnames if return_test and test_mofnames is not None and name in name_to_idx]
+
+    # Create data loaders
     train_loader = DataLoader(dataset, batch_size=batch_size,
-                              sampler=train_sampler,
+                              sampler=SubsetRandomSampler(train_idx),
                               num_workers=num_workers,
                               collate_fn=collate_fn, pin_memory=pin_memory)
+
     val_loader = DataLoader(dataset, batch_size=batch_size,
-                            sampler=val_sampler,
+                            sampler=SubsetRandomSampler(val_idx),
                             num_workers=num_workers,
                             collate_fn=collate_fn, pin_memory=pin_memory)
-    if return_test:
+
+    if return_test and test_mofnames is not None:
         test_loader = DataLoader(dataset, batch_size=batch_size,
-                                 sampler=test_sampler,
+                                 sampler=SubsetRandomSampler(test_idx),
                                  num_workers=num_workers,
                                  collate_fn=collate_fn, pin_memory=pin_memory)
-    if return_test:
         return train_loader, val_loader, test_loader
-    else:
-        return train_loader, val_loader
+
+    return train_loader, val_loader

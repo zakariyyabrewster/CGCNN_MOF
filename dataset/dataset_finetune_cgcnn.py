@@ -525,7 +525,7 @@ def kcv_loader(dataset, collate_fn=default_collate,
     print(f"Random seed: {random_seed}")
 
     # Map MOFname → dataset index
-    name_to_idx = {dataset.df.iloc[i]['MOFname']: i for i in range(len(dataset))}
+    name_to_idx = {dataset.id_prop_data[i][0]: i for i in range(len(dataset))}
 
     train_idx = [name_to_idx[name] for name in train_mofnames if name in name_to_idx]
     val_idx = [name_to_idx[name] for name in val_mofnames if name in name_to_idx]

@@ -192,7 +192,7 @@ class KCV_CGCNN(object):
                 if valid_mae < best_valid_mae:
                     # save the model weights
                     best_valid_mae = valid_mae
-                    torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, f'model_fold{self.config['dataloader']['fold']}.pth'))
+                    torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, f"model_fold{self.config['dataloader']['fold']}.pth"))
 
                 self.writer.add_scalar('valid_loss', valid_loss, global_step=valid_n_iter)
                 valid_n_iter += 1
@@ -281,7 +281,7 @@ class KCV_CGCNN(object):
     def test(self):
         # test steps
         print("Testing CGCNN on {} for {}...".format(self.config['data_name'], self.config['target_property']))
-        model_path = os.path.join(self.writer.log_dir, 'checkpoints', f'model_fold{self.config['fold']}.pth')
+        model_path = os.path.join(self.writer.log_dir, 'checkpoints', "model_fold{}.pth".format(self.config['dataloader']['fold']))
         print(model_path)
         state_dict = torch.load(model_path, map_location=self.device)
         self.model.load_state_dict(state_dict)
@@ -386,8 +386,8 @@ if __name__ == "__main__":
         print("Fold {}".format(fold))
         config['dataloader']['fold'] = fold
 
-        train_names = pd.read_csv(os.path.join(fold_dir, 'train_val', f"fold_{fold}_train.csv"))['MOFname'].tolist()
-        valid_names = pd.read_csv(os.path.join(fold_dir, 'train_val', f"fold_{fold}_val.csv"))['MOFname'].tolist()
+        train_names = pd.read_csv(os.path.join(fold_dir, 'train_val', "fold_{}_train.csv".format(fold)))['MOFname'].tolist()
+        valid_names = pd.read_csv(os.path.join(fold_dir, 'train_val', "fold_{}_val.csv".format(fold)))['MOFname'].tolist()
         test_names = pd.read_csv(os.path.join(fold_dir, 'test_holdout.csv'))['MOFname'].tolist()
 
         config['dataloader']['train_mofnames'] = train_names
@@ -396,7 +396,7 @@ if __name__ == "__main__":
 
         log_dir = os.path.join(
             'training_results/finetuning/CGCNN_CV',
-            f"CGCNN_fold_{fold}_{target_property}"
+            "CGCNN_fold_{}_{}".format(fold, target_property)
         )
         os.makedirs(log_dir, exist_ok=True)
 
@@ -413,6 +413,6 @@ if __name__ == "__main__":
     
     all_results_df = pd.DataFrame(fold_results, columns=['Fold', 'MSE Loss', 'MAE Loss'])
     all_results_df.to_csv(
-        f'training_results/finetuning/CGCNN_CV/cv_results_{target_property}.csv',
+        "training_results/finetuning/CGCNN_CV/cv_results_{}.csv".format(target_property),
         mode='a', index=False, header=True
     )

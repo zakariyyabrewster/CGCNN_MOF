@@ -186,8 +186,11 @@ def create_comprehensive_plots(fold_df, data_name, out_dir="training_results/ana
     for i, (metric, title) in enumerate(zip(metrics, metric_titles)):
         ax = plt.subplot(2, 4, i+1)
         
-        # Calculate means and stds
+        # Calculate means and stds while preserving original order
         summary = fold_df.groupby('property')[metric].agg(['mean', 'std']).reset_index()
+        # Reorder to match original properties order
+        summary['property'] = pd.Categorical(summary['property'], categories=properties, ordered=True)
+        summary = summary.sort_values('property').reset_index(drop=True)
         
         # Create bar plot with error bars
         bars = ax.bar(summary['property'], summary['mean'], 
@@ -208,7 +211,12 @@ def create_comprehensive_plots(fold_df, data_name, out_dir="training_results/ana
     for i, (metric, title) in enumerate(zip(metrics, metric_titles)):
         ax = plt.subplot(2, 4, i+5)
         
-        sns.boxplot(data=fold_df, x='property', y=metric, ax=ax, showfliers=True)
+        # Create a copy of fold_df with ordered categories
+        fold_df_ordered = fold_df.copy()
+        fold_df_ordered['property'] = pd.Categorical(fold_df_ordered['property'], 
+                                                   categories=properties, ordered=True)
+        
+        sns.boxplot(data=fold_df_ordered, x='property', y=metric, ax=ax, showfliers=True)
         ax.set_title(f'{title} - Fold Variation', fontsize=12, fontweight='bold')
         ax.set_xlabel('')
         ax.set_ylabel(metric.upper())
@@ -219,7 +227,7 @@ def create_comprehensive_plots(fold_df, data_name, out_dir="training_results/ana
     plt.tight_layout()
     
     # Save plot
-    out_path = f"{out_dir}/{data_name}_comprehensive_analysis.png"
+    out_path = f"{out_dir}/{data_name}_cgcnn_cv_comprehensive_analysis.png"
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -261,7 +269,7 @@ def create_ranking_plot(fold_df, data_name, out_dir):
                 ha='left', va='center', fontweight='bold', fontsize=12)
     
     plt.tight_layout()
-    out_path = f"{out_dir}/{data_name}_ranking.png"
+    out_path = f"{out_dir}/{data_name}_cgcnn_cv_ranking.png"
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.show()
 
@@ -278,14 +286,14 @@ def main():
     
     # Save detailed fold metrics
     fold_metrics.to_csv(
-        f"training_results/analysis/{config['data_name']}_detailed_fold_metrics.csv",
+        f"training_results/analysis/{config['data_name']}_cgcnn_cv_detailed_fold_metrics.csv",
         index=False
     )
     
     # 3) Create comprehensive summary
     comprehensive_summary = create_comprehensive_summary(fold_metrics)
     comprehensive_summary.to_csv(
-        f"training_results/analysis/{config['data_name']}_comprehensive_summary.csv",
+        f"training_results/analysis/{config['data_name']}_cgcnn_cv_comprehensive_summary.csv",
         index=False
     )
     

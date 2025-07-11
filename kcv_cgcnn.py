@@ -404,12 +404,12 @@ if __name__ == "__main__":
         fine_tune.train()
         loss, metric = fine_tune.test()
 
-        result_df = pd.DataFrame([[fold, loss, metric]], columns=['Fold', 'MSE Loss', 'MAE Loss'])
+        result_df = pd.DataFrame([[fold, loss, metric.item()]], columns=['Fold', 'MSE Loss', 'MAE Loss'])
         result_df.to_csv(
             os.path.join(log_dir, 'fold_results.csv'),
             mode='a', index=False, header=not os.path.exists(os.path.join(log_dir, 'fold_results.csv'))
         )
-        fold_results.append((fold, loss, metric))
+        fold_results.append((fold, loss, metric.item()))
     
     all_results_df = pd.DataFrame(fold_results, columns=['Fold', 'MSE Loss', 'MAE Loss'])
     all_results_df.to_csv(

@@ -21,5 +21,17 @@ module load cudnn/9.5.1.17
 
 source myenv/bin/activate
 
-bash extract_db.sh # extract tar file of CoRE2019, only have to do once in env
-bash train_cgcnn.sh Di # train model on Di, CH4_HP, CO2_LP, logKH_CO2
+TARGETS=("$@") # Accept target properties as command line arguments
+
+# Loop over target properties
+for TARGET in "${TARGETS[@]}"; do
+    echo "=============================="
+    echo "Training on target: $TARGET"
+    echo "=============================="
+
+    # Run training script with the current target_property
+    python finetune_cgcnn.py --target_property $TARGET
+    echo "Finished training on target: $TARGET"
+done
+
+# bash extract_db.sh # extract tar file of CoRE2019, only have to do once in env

@@ -17,14 +17,13 @@ optim:
 
 
 dataloader:
-  valid_ratio: 0.15
-  test_ratio: 0.15
   use_ratio: 1
   randomSeed: 1
+  num_folds: 5
 
 target_property: Di
 
-num_folds: 5
+
 
 dataset:
   data_name: CoRE2019

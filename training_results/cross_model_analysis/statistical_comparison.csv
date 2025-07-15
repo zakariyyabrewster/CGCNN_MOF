@@ -1,0 +1,7 @@
+property,srcc_stat,srcc_pval,srcc_cohens_d,srcc_test,srcc_winner,srcc_significant,mae_stat,mae_pval,mae_cohens_d,mae_test,mae_winner,mae_significant,mse_stat,mse_pval,mse_cohens_d,mse_test,mse_winner,mse_significant,r2_stat,r2_pval,r2_cohens_d,r2_test,r2_winner,r2_significant
+Di,0.0,0.0625,4.276272188200453,Wilcoxon,CGCNN,False,3.0,0.3125,-0.5532308206073688,Wilcoxon,CGCNN,False,1.0,0.125,-1.1790402926559036,Wilcoxon,CGCNN,False,1.0,0.125,1.1790402926559018,Wilcoxon,CGCNN,False
+Df,0.0,0.0625,3.7268094123773308,Wilcoxon,CGCNN,False,0.0,0.0625,-2.96535974181226,Wilcoxon,CGCNN,False,0.0,0.0625,-3.025121312927848,Wilcoxon,CGCNN,False,0.0,0.0625,3.025121312927846,Wilcoxon,CGCNN,False
+Dif,0.0,0.0625,4.912866633538438,Wilcoxon,CGCNN,False,5.0,0.625,-0.3128747513118843,Wilcoxon,CGCNN,False,0.0,0.0625,-1.9966766235118243,Wilcoxon,CGCNN,False,0.0,0.0625,1.9966766235118187,Wilcoxon,CGCNN,False
+CH4_HP,0.0,0.0625,19.232877558541006,Wilcoxon,CGCNN,False,0.0,0.0625,-23.800931931899253,Wilcoxon,CGCNN,False,0.0,0.0625,-33.68953201683098,Wilcoxon,CGCNN,False,0.0,0.0625,33.68953201683098,Wilcoxon,CGCNN,False
+CO2_LP,0.0,0.0625,16.415151543993385,Wilcoxon,CGCNN,False,0.0,0.0625,-17.95598742219344,Wilcoxon,CGCNN,False,0.0,0.0625,-17.14051986150286,Wilcoxon,CGCNN,False,0.0,0.0625,17.140519861502856,Wilcoxon,CGCNN,False
+logKH_CO2,0.0,0.0625,10.610376183881279,Wilcoxon,CGCNN,False,0.0,0.0625,-7.73761976478736,Wilcoxon,CGCNN,False,0.0,0.0625,-8.320896912260704,Wilcoxon,CGCNN,False,0.0,0.0625,8.320896912260695,Wilcoxon,CGCNN,False

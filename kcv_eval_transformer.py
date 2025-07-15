@@ -286,14 +286,14 @@ def main():
     
     # Save detailed fold metrics
     fold_metrics.to_csv(
-        f"training_results/analysis/{config['data_name']}_trans_cv_detailed_fold_metrics.csv",
+        f"training_results/analysis/{config['dataset']['data_name']}_trans_cv_detailed_fold_metrics.csv",
         index=False
     )
     
     # 3) Create comprehensive summary
     comprehensive_summary = create_comprehensive_summary(fold_metrics)
     comprehensive_summary.to_csv(
-        f"training_results/analysis/{config['data_name']}_trans_cv_comprehensive_summary.csv",
+        f"training_results/analysis/{config['dataset']['data_name']}_trans_cv_comprehensive_summary.csv",
         index=False
     )
     
@@ -304,7 +304,7 @@ def main():
     perform_statistical_tests(fold_metrics)
     
     # 5) Create visualizations
-    create_comprehensive_plots(fold_metrics, config['data_name'])
+    create_comprehensive_plots(fold_metrics, config['dataset']['data_name'])
     
     # 6) Final ranking summary
     print("\n=== FINAL RANKINGS ===")

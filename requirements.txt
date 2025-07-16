@@ -3,6 +3,7 @@ torchvision>=0.18.0
 numpy
 pandas
 scikit-learn
-PyYAML
+pyyaml
 pymatgen
 tensorboard
+transformers

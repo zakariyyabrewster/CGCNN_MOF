@@ -100,18 +100,9 @@ class FineTunePCD(object):
             model = model.to(self.device)
             
         # Setup optimizer similar to CGCNN
-        if self.config['optim']['optimizer'] == 'SGD':
-            optimizer = optim.SGD(model.parameters(), 
-                                lr=self.config['optim']['lr'], 
-                                momentum=self.config['optim']['momentum'], 
-                                weight_decay=eval(self.config['optim']['weight_decay']))
-        elif self.config['optim']['optimizer'] == 'Adam':
-            optimizer = optim.Adam(model.parameters(), 
+        optimizer = optim.Adam(model.parameters(), 
                                  lr=self.config['optim']['lr'], 
-                                 weight_decay=eval(self.config['optim']['weight_decay']),
-                                 momentum=self.config['optim']['momentum'])
-        else:
-            raise NameError('Only SGD or Adam is allowed as optimizer')
+                                 weight_decay=eval(self.config['optim']['weight_decay']))
         
         model_checkpoints_folder = os.path.join(self.writer.log_dir, 'checkpoints')
         

@@ -266,10 +266,11 @@ if __name__ == "__main__":
     task_name = config['data_name']
     seed = config['random_seed']
     target_property = config['target_property']
+    norm = 'Norm' if config['dataset']['normalize'] else 'Raw'
 
     log_dir = os.path.join(
         'training_results/finetuning/PointNet',
-        'PointNet_{}_{}_{}_{}'.format('scratch', task_name, seed, target_property)
+        'PointNet_{}_{}_{}_{}_{}'.format('scratch', task_name, seed, target_property, norm)
     )
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -278,7 +279,7 @@ if __name__ == "__main__":
     fine_tune.train()
     loss, metric = fine_tune.test()
 
-    fn = 'PointNet_{}_{}_{}_{}.csv'.format('scratch', task_name, seed, target_property)
+    fn = 'PointNet_{}_{}_{}_{}_{}.csv'.format('scratch', task_name, seed, target_property, norm)
     df = pd.DataFrame([[loss, metric.item()]], 
                       columns=['MSE Loss', 'MAE Loss'])
     df.to_csv(

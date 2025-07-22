@@ -115,6 +115,9 @@ class PointCloudTransform:
         # Center the point cloud
         if self.center:
             pcd = center_pcd(pcd)
+
+        if self.normalize:
+            pcd = normalize_pcd(pcd)
         
         # Data augmentation (training only)
         if self.rotation:

@@ -21,6 +21,8 @@ module load cudnn/9.5.1.17
 
 source myenv/bin/activate
 
+pip install -r requirements.txt
+
 # bash extract_db.sh
 
 TARGETS=("$@") # Accept target properties as command line arguments

@@ -42,16 +42,21 @@ class FineTunePCD(object):
         label_dir_template = self.config['dataset']['label_dir_template']
         target_property = self.config['target_property']
         new_label_dir = label_dir_template.format(target_property=target_property)
-        new_config = self.config['dataset'].copy()
-        new_config['label_dir'] = new_label_dir
-        new_config.pop('label_dir_template', None)
-
+        
         transforms = PointCloudTransform(
             center=self.config['dataset']['center'],
             normalize=self.config['dataset']['normalize'],
         )
 
-        self.dataset = PointCloudData(**new_config, transform=transforms)
+        # Only pass parameters that PointCloudData expects
+        dataset_config = {
+            'root_dir': self.config['dataset']['root_dir'],
+            'label_dir': new_label_dir,
+            'random_seed': self.config['dataset']['random_seed'],
+            'transform': transforms
+        }
+
+        self.dataset = PointCloudData(**dataset_config)
         self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader_pcd(
             dataset=self.dataset,
             collate_fn=collate_pcd_padded,

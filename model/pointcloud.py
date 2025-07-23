@@ -56,8 +56,13 @@ class PointNetLite(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-        self.fc_out = nn.Linear(256, output_dims)
-    
+        self.fc_out = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 1)
+        )
+
     def forward(self, x):
         # x shape: (batch_size, input_dims, n_atoms)
         x = self.mlp1(x)  # (batch_size, 64, n_atoms)

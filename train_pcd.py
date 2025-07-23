@@ -9,6 +9,7 @@ import pandas as pd
 import argparse
 import sys
 import warnings
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -114,7 +115,13 @@ class FineTunePCD(object):
         best_valid_loss = np.inf
         best_valid_mae = np.inf
         
+        # Lists to track losses for plotting
+        train_losses = []
+        valid_losses = []
+        valid_epochs = []
+        
         for epoch_counter in range(self.config['epochs']):
+            epoch_train_losses = []
             for bn, (batch_pcd, batch_targets, batch_cif_ids) in enumerate(self.train_loader):
                 if self.config['cuda']:
                     batch_pcd = Variable(batch_pcd.to(self.device, non_blocking=True))
@@ -129,6 +136,9 @@ class FineTunePCD(object):
                 output = model(batch_pcd)
                 loss = self.criterion(output.squeeze(), target_var)
                 
+                # Track training loss for this batch
+                epoch_train_losses.append(loss.item())
+                
                 if bn % self.config['log_every_n_steps'] == 0:
                     self.writer.add_scalar('train_loss', loss.item(), global_step=n_iter)
                     print('Epoch: %d, Batch: %d, Loss:'%(epoch_counter+1, bn), loss.item())
@@ -137,10 +147,18 @@ class FineTunePCD(object):
                 loss.backward()
                 optimizer.step()
                 n_iter += 1
+            
+            # Store average training loss for this epoch
+            train_losses.append(np.mean(epoch_train_losses))
 
             # validate the model if requested
             if epoch_counter % self.config['eval_every_n_epochs'] == 0:
                 valid_loss, valid_mae = self._validate(model, self.valid_loader, epoch_counter)
+                
+                # Store validation loss and epoch
+                valid_losses.append(valid_loss)
+                valid_epochs.append(epoch_counter)
+                
                 if valid_mae < best_valid_mae:
                     # save the model weights
                     best_valid_mae = valid_mae
@@ -148,6 +166,9 @@ class FineTunePCD(object):
 
                 self.writer.add_scalar('valid_loss', valid_loss, global_step=valid_n_iter)
                 valid_n_iter += 1
+        
+        # Create and save loss plot
+        self._plot_losses(train_losses, valid_losses, valid_epochs, model_checkpoints_folder)
         
         self.model = model
 
@@ -176,7 +197,7 @@ class FineTunePCD(object):
                 losses.update(loss.data.cpu().item(), batch_targets.size(0))
                 mae_errors.update(mae_error, batch_targets.size(0))
 
-            print('Epoch [{0}] Validate: [{1}/{2}], '
+                print('Epoch [{0}] Validate: [{1}/{2}], '
                     'Loss {loss.val:.4f} ({loss.avg:.4f}), '
                     'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
                 n_epoch+1, bn+1, len(valid_loader), loss=losses,
@@ -244,6 +265,39 @@ class FineTunePCD(object):
         self.model.train()
         print('MAE {mae_errors.avg:.3f}'.format(mae_errors=mae_errors))
         return losses.avg, mae_errors.avg
+
+    def _plot_losses(self, train_losses, valid_losses, valid_epochs, save_dir):
+        """
+        Plot training and validation losses and save the plot.
+        
+        Args:
+            train_losses: List of training losses (one per epoch)
+            valid_losses: List of validation losses
+            valid_epochs: List of epochs where validation was performed
+            save_dir: Directory to save the plot
+        """
+        plt.figure(figsize=(10, 6))
+        
+        # Plot training loss
+        epochs = list(range(len(train_losses)))
+        plt.plot(epochs, train_losses, 'b-', label='Training Loss', linewidth=2)
+        
+        # Plot validation loss
+        plt.plot(valid_epochs, valid_losses, 'r-', label='Validation Loss', linewidth=2, marker='o')
+        
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss (MSE)')
+        plt.title(f'Training and Validation Loss - {self.config["target_property"]}')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        # Save the plot
+        plot_path = os.path.join(save_dir, f'loss_plot_{self.config["target_property"]}.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"Loss plot saved to: {plot_path}")
 
 
 if __name__ == "__main__":

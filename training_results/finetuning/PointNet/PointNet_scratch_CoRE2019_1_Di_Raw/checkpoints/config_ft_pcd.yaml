@@ -9,8 +9,8 @@ random_seed: 1
 gpu: 'cuda:0'
 
 # Training parameters
-epochs: 60
-batch_size: 32
+epochs: 300
+batch_size: 16
 log_every_n_steps: 10
 eval_every_n_epochs: 1
 
@@ -32,5 +32,5 @@ dataloader:
 # Optimizer settings
 optim:
   optimizer: Adam
-  lr: 0.01
+  lr: 0.001
   weight_decay: 1e-6

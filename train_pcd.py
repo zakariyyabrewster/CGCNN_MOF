@@ -67,16 +67,19 @@ class FineTunePCD(object):
             **self.config['dataloader'],
             return_test=True
         )
+            
+        train_indices = list(self.train_loader.sampler)
 
-        # obtain target value normalizer
-        if len(self.dataset) < 500:
-            warnings.warn('Dataset has less than 500 data points. '
-                        'Lower accuracy is expected. ')
-            sample_data_list = [self.dataset[i] for i in range(len(self.dataset))]
-        else:
-            sample_data_list = [self.dataset[i] for i in
-                                sample(range(len(self.dataset)), 500)]
+        # Randomly sample up to 500
+        sample_indices = sample(train_indices, min(500, len(train_indices)))
+
+        # Use dataset to get the samples
+        sample_data_list = [self.dataset[i] for i in sample_indices]
+
+        # Use your collate function to extract target tensor
         _, sample_target, _ = collate_pcd_padded(sample_data_list)
+
+        # Fit normalizer only on training targets
         self.normalizer = Normalizer(sample_target)
 
     def _get_device(self):
@@ -317,10 +320,11 @@ if __name__ == "__main__":
     seed = config['random_seed']
     target_property = config['target_property']
     norm = 'Norm' if config['dataset']['normalize'] else 'Raw'
+    center = 'Center' if config['dataset']['center'] else 'NoCenter'
 
     log_dir = os.path.join(
         'training_results/finetuning/PointNet',
-        'PointNet_{}_{}_{}_{}_{}'.format('scratch', task_name, seed, target_property, norm)
+        'PointNet_{}_{}_{}_{}_{}_{}'.format('scratch', task_name, seed, target_property, center, norm)
     )
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -329,7 +333,7 @@ if __name__ == "__main__":
     fine_tune.train()
     loss, metric = fine_tune.test()
 
-    fn = 'PointNet_{}_{}_{}_{}_{}.csv'.format('scratch', task_name, seed, target_property, norm)
+    fn = 'PointNet_{}_{}_{}_{}_{}.csv'.format('scratch', task_name, seed, target_property, center, norm)
     df = pd.DataFrame([[loss, metric.item()]], 
                       columns=['MSE Loss', 'MAE Loss'])
     df.to_csv(

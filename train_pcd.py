@@ -320,7 +320,7 @@ if __name__ == "__main__":
 
     log_dir = os.path.join(
         'training_results/finetuning/PointNet',
-        'PointNet_{}_{}_{}_{}_{}.csv'.format('scratch', task_name, seed, target_property, norm)
+        'PointNet_{}_{}_{}_{}_{}'.format('scratch', task_name, seed, target_property, norm)
     )
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)

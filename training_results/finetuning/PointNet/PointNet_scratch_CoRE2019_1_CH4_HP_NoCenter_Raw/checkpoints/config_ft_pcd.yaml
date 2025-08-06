@@ -1,0 +1,36 @@
+# PointNet Configuration for MOF Property Prediction
+# Similar structure to CGCNN config
+
+# General settings
+data_name: 'CoRE2019'
+task: 'regression'
+target_property: Di  # Will be overridden by command line arg
+random_seed: 1
+gpu: 'cuda:0'
+
+# Training parameters
+epochs: 300
+batch_size: 16
+log_every_n_steps: 10
+eval_every_n_epochs: 1
+
+# Dataset configuration
+dataset:
+  root_dir: './test_datasets/CoRE2019'
+  label_dir_template: './test_datasets/id_{target_property}.csv'
+  random_seed: 1
+  center: False
+  normalize: False # Don't normalize coordinates for pore diameter prediction
+
+# Data loader settings
+dataloader:
+  num_workers: 0
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+
+# Optimizer settings
+optim:
+  optimizer: Adam
+  lr: 0.001
+  weight_decay: 1e-6

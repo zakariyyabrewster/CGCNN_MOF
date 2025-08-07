@@ -1,0 +1,35 @@
+# PointNet Configuration for MOF Property Prediction - K-Fold Cross Validation
+# Similar structure to CGCNN KCV config
+
+# General settings
+data_name: 'CoRE2019'
+task: 'regression'
+target_property: Di  # Will be overridden by command line arg
+random_seed: 1
+gpu: 'cuda:0'
+
+# Training parameters
+epochs: 60
+batch_size: 32
+log_every_n_steps: 10
+eval_every_n_epochs: 1
+
+# Dataset configuration
+dataset:
+  root_dir: './test_datasets/CoRE2019'
+  label_dir_template: './test_datasets/id_{target_property}.csv'
+  fold_dir: './test_datasets/folds'
+  random_seed: 1
+  center: True
+  normalize: False # Don't normalize coordinates for pore diameter prediction
+
+# Data loader settings
+dataloader:
+  num_folds: 5
+  num_workers: 0
+
+# Optimizer settings
+optim:
+  optimizer: Adam
+  lr: 0.01
+  weight_decay: 1e-6

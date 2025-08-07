@@ -17,7 +17,6 @@ import yaml
 config = yaml.load(open("config_ft_pcd.yaml", "r"), Loader=yaml.FullLoader)
 
 result_path_pre = f'training_results/finetuning/PointNet/PointNet_scratch_{config['data_name']}_{config['random_seed']}_'
-
 os.makedirs('training_results/analysis', exist_ok=True)
 
 def load_test_results():
@@ -26,7 +25,7 @@ def load_test_results():
     all_results = []
 
     for prop in properties:
-        file_path = f'{result_path_pre}{prop}_Raw/test_results_{prop}.csv'
+        file_path = f'{result_path_pre}{prop}_NoCenter_Raw/test_results_{prop}.csv'
 
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
@@ -131,7 +130,7 @@ def visualize_results(test_results, performance_df):
         srcc_val = performance_df[performance_df['property'] == prop]['srcc'].iloc[0]
         ax.set_title(f'{prop} (SRCC: {srcc_val:.3f})', fontsize=11)
 
-    plt.savefig(f'training_results/analysis/{config['data_name']}_pointnet_{len(properties)}properties_analysis.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'training_results/analysis/{config['data_name']}_pointnet_noncentered_{len(properties)}properties_analysis.png', dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -180,8 +179,8 @@ def main():
     visualize_results(test_results, performance_df)
 
     # Save results
-    performance_df.to_csv(f'training_results/analysis/{config['data_name']}_pointnet_{len(test_results['property'].unique())}properties_performance.csv', index=False)
-    comparison_df.to_csv(f'training_results/analysis/{config['data_name']}_pointnet_{len(test_results['property'].unique())}6properties_comparison.csv', index=False)
+    performance_df.to_csv(f'training_results/analysis/{config['data_name']}_pointnet_noncentered_{len(test_results['property'].unique())}properties_performance.csv', index=False)
+    comparison_df.to_csv(f'training_results/analysis/{config['data_name']}_pointnet_noncentered_{len(test_results['property'].unique())}6properties_comparison.csv', index=False)
     print("\nResults saved to CSV files")
 
     return performance_df, comparison_df

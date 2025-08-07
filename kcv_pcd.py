@@ -328,8 +328,6 @@ if __name__ == "__main__":
     seed = config['random_seed']
     target_property = config['target_property']
     fold_dir = config['dataset']['fold_dir']
-    norm = 'Norm' if config['dataset']['normalize'] else 'Raw'
-    center = 'Center' if config['dataset']['center'] else 'NoCenter'
 
     fold_results = []
 

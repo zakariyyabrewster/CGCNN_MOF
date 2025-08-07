@@ -28,8 +28,6 @@ echo "Starting 5-Fold Cross-Validation for PointNet on MOF properties..."
 # List of properties to evaluate
 properties=("Di" "Df" "Dif" "CH4_HP" "CO2_LP" "logKH_CO2")
 
-# Random seed
-
 for prop in "${properties[@]}"; do
     echo "=========================================="
     echo "Running 5-Fold CV for property: $prop"

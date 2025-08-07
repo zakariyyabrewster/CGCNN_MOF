@@ -33,15 +33,15 @@ class RandomRotation:
         if self.axis == 'x':
             R = torch.tensor([[1, 0, 0],
                                             [0, np.cos(theta), -np.sin(theta)],
-                                            [0, np.sin(theta), np.cos(theta)]])
+                                            [0, np.sin(theta), np.cos(theta)]], dtype=pc.dtype)
         elif self.axis == 'y':
             R = torch.tensor([[np.cos(theta), 0, np.sin(theta)],
                                             [0, 1, 0],
-                                            [-np.sin(theta), 0, np.cos(theta)]])
+                                            [-np.sin(theta), 0, np.cos(theta)]], dtype=pc.dtype)
         else:
             R = torch.tensor([[np.cos(theta), -np.sin(theta), 0],
                                             [np.sin(theta), np.cos(theta), 0],
-                                            [0, 0, 1]])
+                                            [0, 0, 1]], dtype=pc.dtype)
 
         pcd_rotated = (R @ pc.T).T
 

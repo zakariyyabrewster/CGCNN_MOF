@@ -31,6 +31,6 @@ for TARGET in "${TARGETS[@]}"; do
     echo "=============================="
 
     # Run training script with the current target_property
-    python train_pcd.py --target_property $TARGET
+    python run_pcd.py --target_property $TARGET
     echo "Finished training on target: $TARGET"
 done

@@ -25,7 +25,8 @@ pip install -r requirements.txt
 
 # bash extract_db.sh
 
-TARGETS=("$@") # Accept target properties as command line arguments
+TARGETS=("Di" "Df" "Dif" "CH4_HP" "CO2_LP" "logKH_CO2")
+
 
 # Loop over target properties
 for TARGET in "${TARGETS[@]}"; do

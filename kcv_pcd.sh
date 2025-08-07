@@ -16,6 +16,6 @@ for prop in "${properties[@]}"; do
     echo "=========================================="
     
     python kcv_pcd.py --target_property $prop
-
+done 
 echo "All 5-Fold Cross-Validation experiments completed!"
 echo "Results saved in training_results/finetuning/PointNet_CV/"

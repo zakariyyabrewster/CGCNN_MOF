@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
-from dataset.dataset_pcd import PointCloudData, collate_pcd_padded, kcv_loader
+from dataset.dataset_pcd import PointCloudData, collate_pcd_upsample, kcv_loader
 from model.pointcloud import PointNetLite
 from dataset.transforms_pcd import *
 
@@ -44,10 +44,7 @@ class KCV_PCD(object):
         target_property = self.config['target_property']
         new_label_dir = label_dir_template.format(target_property=target_property)
         
-        transforms = PointCloudTransform(
-            center=self.config['dataset']['center'],
-            normalize=self.config['dataset']['normalize'],
-        )
+        transforms = PointCloudTransform()
 
         # Only pass parameters that PointCloudData expects
         dataset_config = {
@@ -60,7 +57,7 @@ class KCV_PCD(object):
         self.dataset = PointCloudData(**dataset_config)
         self.train_loader, self.valid_loader, self.test_loader = kcv_loader(
             dataset=self.dataset,
-            collate_fn=collate_pcd_padded,
+            collate_fn=collate_pcd_upsample,
             random_seed=self.config['random_seed'],
             pin_memory=self.config['gpu'] != 'cpu',
             batch_size=self.config['batch_size'],
@@ -77,7 +74,7 @@ class KCV_PCD(object):
         sample_data_list = [self.dataset[i] for i in sample_indices]
 
         # Use your collate function to extract target tensor
-        _, sample_target, _ = collate_pcd_padded(sample_data_list)
+        _, sample_target, _ = collate_pcd_upsample(sample_data_list)
 
         # Fit normalizer only on training targets
         self.normalizer = Normalizer(sample_target)
@@ -269,7 +266,7 @@ class KCV_PCD(object):
 
         # Save test results
         fold_num = self.config['dataloader'].get('fold', 'Unknown')
-        with open(os.path.join(self.writer.log_dir, 'test_results_fold_{}_{}.csv'.format(fold_num, self.config['target_property'])), 'w') as f:
+        with open(os.path.join(self.writer.log_dir, 'test_results_{}.csv'.format(fold_num, self.config['target_property'])), 'w') as f:
             writer = csv.writer(f)
             writer.writerow(['cif_id', 'target', 'pred'])
             for cif_id, target, pred in zip(test_cif_ids, test_targets, test_preds):
@@ -357,7 +354,7 @@ if __name__ == "__main__":
         print(f"Test samples: {len(test_names)}")
 
         log_dir = os.path.join(
-            'training_results/finetuning/PointNet_CV',
+            'training_results/finetuning/PointNet_CV_V2',
             "PointNet_fold_{}_{}".format(fold, target_property)
         )
         os.makedirs(log_dir, exist_ok=True)

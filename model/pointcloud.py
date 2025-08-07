@@ -24,22 +24,22 @@ class PointNetLite(nn.Module):
         input_dims = atom_feats  # x, y, z coordinates + atom features
         # Shared MLP1: input_dims (95) -> 64 -> 64
         self.mlp1 = nn.Sequential(
-            nn.Conv1d(input_dims, 64, kernel_size=1), 
+            nn.Conv1d(input_dims, 64, kernel_size=1, bias=False), 
             nn.BatchNorm1d(64),
             nn.ReLU(inplace=True),
-            nn.Conv1d(64, 64, kernel_size=1),
+            nn.Conv1d(64, 64, kernel_size=1, bias=False),
             nn.BatchNorm1d(64),
             nn.ReLU(inplace=True)
         )
 
         self.mlp2 = nn.Sequential(
-            nn.Conv1d(64, 64, kernel_size=1),
+            nn.Conv1d(64, 64, kernel_size=1, bias=False),
             nn.BatchNorm1d(64),
             nn.ReLU(inplace=True),
-            nn.Conv1d(64, 128, kernel_size=1),
+            nn.Conv1d(64, 128, kernel_size=1, bias=False),
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
-            nn.Conv1d(128, 1024, kernel_size=1),
+            nn.Conv1d(128, 1024, kernel_size=1, bias=False),
             nn.BatchNorm1d(1024),
             nn.ReLU(inplace=True)
         )
@@ -53,14 +53,9 @@ class PointNetLite(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(512, 256),
             nn.BatchNorm1d(256),
-            nn.ReLU(inplace=True)
-        )
-
-        self.fc_out = nn.Sequential(
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
-            nn.Linear(128, 1)
+            nn.Dropout(0.3),
+            nn.Linear(256, output_dims)
         )
 
     def forward(self, x):
@@ -69,6 +64,5 @@ class PointNetLite(nn.Module):
         x = self.mlp2(x)  # (batch_size, 1024, n_atoms)
         x = self.global_maxpool(x)  # (batch_size, 1024, 1)
         x = x.squeeze(-1)  # (batch_size, 1024)
-        x = self.mlp3(x)  # (batch_size, 256)
-        x = self.fc_out(x)  # (batch_size, output_dims=1)
+        x = self.mlp3(x)  # (batch_size, 1)
         return x

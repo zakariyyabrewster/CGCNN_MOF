@@ -107,16 +107,16 @@ class AtomCustomJSONInitializer(AtomInitializer):
             self._embedding[key] = np.array(value, dtype=float)
 
 
-def collate_pcd_padded(batch):
+def collate_pcd_upsample(batch):
     """
-    Collate function with padding - similar to your original collate_pcd.
-    Good for consistent batch processing with PointNet.
+    Collate function with upsampling - upsamples smaller point clouds to match the largest one.
+    Uses sampling with replacement to maintain consistent batch size for PointNet.
     
     Args:
         batch: List of (pcd, target, cif_id) tuples where pcd is (features, n_atoms)
         
     Returns:
-        batch_pcd: (batch_size, features, max_n_atoms) with zero padding
+        batch_pcd: (batch_size, features, max_n_atoms) with upsampled data
         batch_targets: (batch_size,) 
         batch_cif_ids: List of cif_ids
     """
@@ -126,13 +126,19 @@ def collate_pcd_padded(batch):
     max_n_atoms = max(pcd.shape[1] for pcd in pcds)
     features_dim = pcds[0].shape[0]  # Should be 95 (3 + 92)
     
-    # Create padded tensor
+    # Create upsampled tensor
     batch_pcd = torch.zeros(len(pcds), features_dim, max_n_atoms)
     
-    # Fill in the data
+    # Fill in the data with upsampling
     for i, pcd in enumerate(pcds):
         n_atoms = pcd.shape[1]
-        batch_pcd[i, :, :n_atoms] = pcd
+        if n_atoms < max_n_atoms:
+            # Upsample by sampling with replacement
+            indices = torch.randint(0, n_atoms, (max_n_atoms,))
+            batch_pcd[i, :, :] = pcd[:, indices]
+        else:
+            # Already at max size
+            batch_pcd[i, :, :] = pcd
     
     batch_targets = torch.stack(targets)
     
@@ -209,7 +215,7 @@ def get_train_val_test_loader_pcd(dataset, collate_fn=default_collate,
         return train_loader, val_loader
 
 def kcv_loader(dataset, collate_fn=default_collate,
-                                 batch_size=64, random_seed=2,
+                                 batch_size=64, random_seed=1,
                                  return_test=False, num_workers=1, pin_memory=False,
                                  **kwargs):
     """

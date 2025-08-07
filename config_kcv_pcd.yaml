@@ -20,8 +20,6 @@ dataset:
   label_dir_template: './test_datasets/id_{target_property}.csv'
   fold_dir: './test_datasets/folds'
   random_seed: 1
-  center: True
-  normalize: False # Don't normalize coordinates for pore diameter prediction
 
 # Data loader settings
 dataloader:
@@ -31,5 +29,5 @@ dataloader:
 # Optimizer settings
 optim:
   optimizer: Adam
-  lr: 0.01
+  lr: 0.001
   weight_decay: 1e-6

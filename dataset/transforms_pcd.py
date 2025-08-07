@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import nn
+import random
 
 
 def center_pcd(pcd: torch.Tensor) -> torch.Tensor:
@@ -17,32 +18,44 @@ def center_pcd(pcd: torch.Tensor) -> torch.Tensor:
     centered_pcd = pcd - centroid
     return centered_pcd
 
-def normalize_pcd(pcd: torch.Tensor) -> torch.Tensor:
-    """
-    Normalize the point cloud data to have zero mean and unit variance.
+class IdentityTransform:
+    def __call__(self, pcd: torch.Tensor) -> torch.Tensor:
+        return pcd
 
-    Args:
-        pcd (torch.Tensor): Point cloud data of shape (N, 3), where N is the number of points.
+class RandomRotation:
+    def __init__(self, axis=None):
+        self.axis = axis if axis is not None else np.random.choice(['x', 'y', 'z'])
+    
+    def __call__(self, pcd: torch.Tensor) -> torch.Tensor:
+        # input pcd shape: (N, 3))
+        pc = pcd.clone()
+        theta = np.random.uniform(0, 2 * np.pi)
+        if self.axis == 'x':
+            R = torch.tensor([[1, 0, 0],
+                                            [0, np.cos(theta), -np.sin(theta)],
+                                            [0, np.sin(theta), np.cos(theta)]])
+        elif self.axis == 'y':
+            R = torch.tensor([[np.cos(theta), 0, np.sin(theta)],
+                                            [0, 1, 0],
+                                            [-np.sin(theta), 0, np.cos(theta)]])
+        else:
+            R = torch.tensor([[np.cos(theta), -np.sin(theta), 0],
+                                            [np.sin(theta), np.cos(theta), 0],
+                                            [0, 0, 1]])
 
-    Returns:
-        torch.Tensor: Normalized point cloud data.
-    """
-    mean = pcd.mean(dim=0, keepdim=True)
-    std = pcd.std(dim=0, keepdim=True) + 1e-8  # Avoid division by zero
-    normalized_pcd = (pcd - mean) / std
-    return normalized_pcd
+        pcd_rotated = (R @ pc.T).T
 
+        return pcd_rotated
 
 class PointCloudTransform:
     """
     Composable transforms for MOF point clouds.
     """
-    def __init__(self, 
-                 center: bool = True,
-                 normalize: bool = True):
-        
-        self.center = center
-        self.normalize = normalize
+    def __init__(self):
+        self.transforms = [
+            IdentityTransform(),
+            RandomRotation()
+        ]
     
     def __call__(self, pcd: torch.Tensor) -> torch.Tensor:
         """
@@ -55,10 +68,7 @@ class PointCloudTransform:
             torch.Tensor: Transformed point cloud.
         """
         # Center the point cloud
-        if self.center:
-            pcd = center_pcd(pcd)
-
-        if self.normalize:
-            pcd = normalize_pcd(pcd)
-        
+        pcd = center_pcd(pcd)
+        t = random.choice(self.transforms)
+        pcd = t(pcd)
         return pcd

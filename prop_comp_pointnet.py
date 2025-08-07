@@ -107,12 +107,17 @@ def visualize_results(test_results, performance_df):
                      'Mean Squared Error (MSE)', 'R² Score']
     
     properties = test_results['property'].unique()
-    colors = ['skyblue', 'lightcoral', 'lightgreen', 'gold', 'orchid', 'lightgray']
+    base_colors = ['skyblue', 'lightcoral', 'lightgreen', 'gold', 'orchid', 'lightgray']
+    
+    # Create consistent color mapping based on property names
+    color_map = {prop: base_colors[i] for i, prop in enumerate(properties)}
 
     # Top row: 4 plots, each spans 3 columns (3×4 = 12)
     for i, (metric, title) in enumerate(zip(metrics, metric_titles)):
         ax = fig.add_subplot(gs[0, i*3:(i+1)*3])
-        ax.bar(performance_df['property'], performance_df[metric], color=colors[:len(performance_df)])
+        # Use color_map to ensure consistent colors based on property names
+        bar_colors = [color_map[prop] for prop in performance_df['property']]
+        ax.bar(performance_df['property'], performance_df[metric], color=bar_colors)
         ax.set_title(title, fontsize=13)
         ax.set_ylabel(metric.upper())
         ax.tick_params(axis='x', rotation=45)
@@ -121,7 +126,8 @@ def visualize_results(test_results, performance_df):
     for i, prop in enumerate(properties):
         ax = fig.add_subplot(gs[1, i*2:(i+1)*2])
         prop_data = test_results[test_results['property'] == prop]
-        ax.scatter(prop_data['target'], prop_data['pred'], alpha=0.6, color=colors[i])
+        # Use the same color mapping for consistency
+        ax.scatter(prop_data['target'], prop_data['pred'], alpha=0.6, color=color_map[prop])
         min_val = min(prop_data['target'].min(), prop_data['pred'].min())
         max_val = max(prop_data['target'].max(), prop_data['pred'].max())
         ax.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.8)

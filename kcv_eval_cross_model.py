@@ -14,7 +14,7 @@ with open(config_path, "r") as f:
 # Paths for results
 cgcnn_path_pre = "training_results/finetuning/CGCNN_CV"
 transformer_path_pre = "training_results/finetuning/Transformer_CV"
-pn_path_pre = "training_results/finetuning/PointNet_CV"
+pn_path_pre = "training_results/finetuning/PointNet_CV_V2"
 os.makedirs("training_results/cross_model_analysis", exist_ok=True)
 
 properties = ['Di', 'Df', 'Dif', 'CH4_HP', 'CO2_LP', 'logKH_CO2']

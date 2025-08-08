@@ -371,7 +371,7 @@ if __name__ == "__main__":
             
     
     # Save overall cross-validation results
-    cv_results_dir = "training_results/finetuning/PointNet_CV"
+    cv_results_dir = "training_results/finetuning/PointNet_CV_V2"
     os.makedirs(cv_results_dir, exist_ok=True)
     
     all_results_df = pd.DataFrame(fold_results, columns=['Fold', 'MSE Loss', 'MAE Loss'])

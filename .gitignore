@@ -3,3 +3,4 @@
 .ipynb_checkpoints
 test_datasets/CoRE2019/*.cif
 slurm-*.out
+*events.out.tfevents*

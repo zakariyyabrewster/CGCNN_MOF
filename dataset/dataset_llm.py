@@ -64,7 +64,7 @@ class PromptGenMOFID:
             }
         }
         # compact, stable order
-        return json.dumps(obj, separators=(",", ":"), sort_keys=True)
+        return json.dumps(obj, separators=(",", ":"), sort_keys=False)
     
     def _round_label(self, label: float) -> float:
         if label is None or pd.isna(label):
@@ -75,7 +75,7 @@ class PromptGenMOFID:
             print(f"Error rounding label {label}: {e}")
             return float("nan")
 
-    def row_to_ex(self, r: dict):
+    def row_to_ex(self, r: dict, test: bool = False):
         try:
             mofid_str = r["MOFID"]
             y = self._round_label(r[self.prop_name])
@@ -93,14 +93,22 @@ class PromptGenMOFID:
 
         system_txt = f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_name} in {self.units} as a number (no units, no extra text)."
         
-        return {
-            "messages": [
-                {"role": "system", "content": system_txt},
-                {"role": "user", "content": user_payload},
-                {"role": "assistant", "content": target_text}
-            ]
-        }
-    
+        if test:
+            return {
+                "messages": [
+                    {"role": "system", "content": system_txt},
+                    {"role": "user", "content": user_payload},
+                    {"role": "assistant", "content": target_text}
+                ]
+            }
+        else:
+            return {
+                "messages": [
+                    {"role": "system", "content": system_txt},
+                    {"role": "user", "content": user_payload},
+                ]
+            }
+
     def df_to_jsonl(self, df, jsonl_path):
         with open(jsonl_path, "w", encoding="utf-8") as out:
             for _, r in df.iterrows():

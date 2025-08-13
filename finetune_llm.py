@@ -113,22 +113,17 @@ class OpenAIFinetuneMOFID:
         if not self.fine_tuned_model:
             raise ValueError("Fine-tuned model is not set. Run `start_job` and monitor for completion first.")
         
-        response = self.client.responses.create(
+        eval_msg = prompt["messages"]
+
+        response = self.client.chat.completions.create(
             model=self.fine_tuned_model,
-            input=prompt,
-            temperature=0,
-            max_output_tokens=max_output_tokens,
-            stop=[self.stop]
+            messages=eval_msg,
+            temperature=0
         )
 
         # Use the convenient output_text property
-        text_content = response.output_text
-        if text_content:
-            # parse_first_float uses regex to extract just the numeric part,
-            # automatically ignoring the stop sequence
-            return parse_first_float(text_content.strip(), self.float_re)
-        
-        return None
+        predicted_value = float(response.choices[0].message.content.strip())
+        return predicted_value
     
     def eval_jsonl(self) -> Dict[str, float]:
         data = read_jsonl(self.config['prompt-gen']['test_jsonl'])
@@ -136,13 +131,13 @@ class OpenAIFinetuneMOFID:
         preds = []
         names = []
         for ex in data:
-            label = extract_label(ex["completion"], stop=self.stop)
+            label = extract_label(ex)
             if label is None:
                 continue
-            mofid = extract_mofid(ex["prompt"])
+            mofid = extract_mofid(ex)
             mofname = self.mofid_to_mofname.get(mofid, "UNKNOWN")
 
-            pred = self.generate_prop_val(ex["prompt"])
+            pred = self.generate_prop_val(ex)
             if pred is None:
                 continue
 

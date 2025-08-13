@@ -1,0 +1,31 @@
+finetuner:
+  OPEN_AI_KEY: None
+  base_model: "gpt-4o-mini-2024-07-18"
+  n_epochs: 2
+  suffix: "mof-reg_{}"
+
+FLOAT_RE: "[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?"
+data_name: "CoRE2019"
+mof_representation: "MOFID"
+prompt-gen:
+  target_property: "Di"
+  units: "angstrom"
+  num_precision: 2
+  SEPARATOR: "\n\n###\n\n"
+  STOP: "@@@"
+  drop_bad: True
+  train_jsonl: "test_datasets/train_{}.jsonl"
+  val_jsonl: "test_datasets/val_{}.jsonl"
+  test_jsonl: "test_datasets/test_{}.jsonl"
+  cif_dir: "test_datasets/CoRE2019"
+  
+
+
+lookup_path: "test_datasets/mofid_{}.csv"
+
+log_dir: "training_results/finetuning/LLM_{}"
+
+dataloader:
+  valid_ratio: 0.15
+  test_ratio: 0.15
+  random_seed: 1

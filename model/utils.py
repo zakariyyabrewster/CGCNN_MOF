@@ -1,5 +1,8 @@
 import numpy as np
 import torch
+import re
+import pandas as pd
+from typing import Optional, Dict, Tuple, List
 
 class Normalizer(object):
     """Normalize a Tensor and restore it later. """
@@ -99,3 +102,53 @@ def split_data_subset(data, test_ratio, valid_ratio, subset_size=500, randomSeed
 
 
     return data[train_idx], data[valid_idx], data[test_idx]
+
+def split_data_df(df, test_ratio, valid_ratio, random_seed=None):
+    """
+    Randomly split DataFrame into train/val/test by row position.
+    - Handles 0% splits without -0 slicing issues
+    - Rounds sizes, and gives any remainder to train
+    - Uses modern numpy RNG for better reproducibility
+    
+    Args:
+        df: DataFrame to split
+        test_ratio: Fraction for test set (0.0 to 1.0)
+        valid_ratio: Fraction for validation set (0.0 to 1.0)
+        random_state: Random seed for reproducibility
+        
+    Returns:
+        Tuple of (train_df, valid_df, test_df)
+    """
+    # Input validation - ensure ratios are valid
+    assert 0 <= test_ratio <= 1 and 0 <= valid_ratio <= 1, "ratios must be in [0,1]"
+    assert test_ratio + valid_ratio <= 1, "valid + test must be <= 1"
+
+    n = len(df)
+    
+    # Use modern numpy RNG for better random state management
+    rng = np.random.default_rng(random_seed)
+    perm = rng.permutation(n)  # Create random permutation of indices
+
+    print("The random seed is:", random_seed)
+
+    # Calculate split sizes using rounding (prevents data loss from truncation)
+    n_test = int(round(test_ratio * n))
+    n_valid = int(round(valid_ratio * n))
+    n_train = n - n_valid - n_test  # Give any remainder to training set
+    
+    # Safety check - ensure splits don't exceed dataset size
+    if n_train < 0:
+        raise ValueError("Ratios too large for dataset size.")
+    
+    print('Train size: {}, Validation size: {}, Test size: {}'.format(
+        n_train, n_valid, n_test
+    ))
+
+    # Create contiguous, non-overlapping slices over the single permutation
+    # This avoids the -0 slicing bug and ensures proper splits
+    train_idx = perm[:n_train]                      # First n_train indices
+    valid_idx = perm[n_train:n_train + n_valid]     # Next n_valid indices  
+    test_idx = perm[n_train + n_valid:]             # Remaining n_test indices
+
+    # Return copies to prevent unintended mutations of the original DataFrame
+    return df.iloc[train_idx].copy(), df.iloc[valid_idx].copy(), df.iloc[test_idx].copy()

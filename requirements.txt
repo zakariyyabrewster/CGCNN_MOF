@@ -7,3 +7,4 @@ pyyaml
 pymatgen
 tensorboard
 transformers
+openai

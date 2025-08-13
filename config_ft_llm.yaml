@@ -4,7 +4,7 @@ finetuner:
   n_epochs: 2
   suffix: "mof-reg_{}"
 
-FLOAT_RE: "[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?"
+FLOAT_RE: '[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'
 data_name: "CoRE2019"
 mof_representation: "MOFID"
 prompt-gen:

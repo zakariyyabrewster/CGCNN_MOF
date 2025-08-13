@@ -19,16 +19,16 @@ class PromptGenMOFID:
         self.units = self.config['units']
         self.num_precision = self.config['num_precision']
         self.num_fmt = f"{{:.{self.num_precision}f}}"
-        self.SEPARATOR = self.config['SEPARATOR']
-        self.STOP = self.config['STOP']
+        # self.SEPARATOR = self.config['SEPARATOR']
+        # self.STOP = self.config['STOP']
         self.drop_bad = self.config['drop_bad']
     
     def _sanitize(self, text: str) -> str:
         if text is None:
             return ""
         t = str(text)
-        t = t.replace(self.SEPARATOR, " ")
-        t = t.replace(self.STOP, " ")
+        # t = t.replace(self.SEPARATOR, " ")
+        # t = t.replace(self.STOP, " ")
         return t
 
     def _parse_mofid(self, raw: str):
@@ -53,17 +53,18 @@ class PromptGenMOFID:
                 "catenation": self._sanitize(cat)
                 }
 
-    def _make_prompt(self, mofid_str: str) -> str:
+    def _make_user_payload(self, mofid_str: str) -> str:
         p = self._parse_mofid(mofid_str)
-        core = (
-            f"Q: Predict {self.prop_name} (units: {self.units}) for MOF.\n"
-            f"MOFID: {p['raw']}\n"
-            f"Fields: \n"
-            f"    - SMILES: {p['smiles']}\n"
-            f"    - Topology: {p['topology']}\n"
-            f"    - Catenation: {p['catenation']}\n"
-        )
-        return core + self.SEPARATOR
+        obj = {
+            "mofid": p["raw"],
+            "fields": {
+                "smiles": p["smiles"],
+                "topology": p["topology"],
+                "catenation": p["catenation"],
+            }
+        }
+        # compact, stable order
+        return json.dumps(obj, separators=(",", ":"), sort_keys=True)
     
     def _round_label(self, label: float) -> float:
         if label is None or pd.isna(label):
@@ -78,19 +79,28 @@ class PromptGenMOFID:
         try:
             mofid_str = r["MOFID"]
             y = self._round_label(r[self.prop_name])
+            user_payload = self._make_user_payload(mofid_str)
         except Exception:
             if self.drop_bad: return None
             mofid_str, y = r.get("MOFID", ""), float("nan")
+            user_payload = json.dumps({"mofid": str(mofid_str), "fields": {}}, separators=(",", ":"))
 
         # Handle NaN values in completion
         if pd.isna(y):
-            completion_text = " NaN" + self.STOP
+            target_text = "NaN"
         else:
-            completion_text = " " + self.num_fmt.format(y) + self.STOP
-            
-        return {"prompt": self._make_prompt(mofid_str),
-                "completion": completion_text}
+            target_text = self.num_fmt.format(y)
 
+        system_txt = f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_name} in {self.units} as a number (no units, no extra text)."
+        
+        return {
+            "messages": [
+                {"role": "system", "content": system_txt},
+                {"role": "user", "content": user_payload},
+                {"role": "assistant", "content": target_text}
+            ]
+        }
+    
     def df_to_jsonl(self, df, jsonl_path):
         with open(jsonl_path, "w", encoding="utf-8") as out:
             for _, r in df.iterrows():
@@ -100,7 +110,7 @@ class PromptGenMOFID:
 
     def format_for_inference(self, mofid: str) -> str:
         p = self._parse_mofid(mofid)
-        return self._make_prompt(p)
+        return self._make_user_payload(p)
 
 class PromptGenCIF:
     def __init__(self, config):
@@ -205,14 +215,6 @@ class PromptGenCIF:
         return self._make_prompt(mofname)
 
 
-
-
-
-
-
-
-
-
 def parse_first_float(text: str, float_re: re.Pattern) -> Optional[float]:
     m = float_re.search(text)
     return float(m.group(0)) if m else None
@@ -234,29 +236,53 @@ def read_jsonl(path: str) -> List[Dict[str, str]]:
                 items.append(json.loads(line))
     return items
 
-def extract_label(completion_text: str, stop: str) -> Optional[float]:
-    t = completion_text
-    if t.endswith(stop):
-        t =  t[: -len(stop)]
-    t = t.strip()
-    try:
-        return float(t)
-    except ValueError:
-        return None
-
-def extract_mofid(prompt: str) -> str:
-    _MOFID_LINE_RE = re.compile(r"(?mi)^\s*MOFID\s*:\s*(.+?)\s*$")
+def extract_label(example: dict, stop: Optional[str] = None) -> Optional[float]:
     """
-    Extract the MOFID from a JSONL example.
+    Extract the label (float) from either:
+      - old format: {"completion": " 4.46@@@"}
+      - new chat format: {"messages": [{"role": "assistant", "content": "4.46"}]}
     
     Args:
-        ex (Dict[str, str]): A dictionary representing a JSONL example.
+        example (dict): Parsed JSONL row.
+        stop (str, optional): Stop token to strip (old format only).
+    
+    Returns:
+        float or None: The extracted label.
+    """
+    # Case 1: Chat format
+    if "messages" in example:
+        assistant_msg = next((m for m in example["messages"] if m.get("role") == "assistant"), None)
+        if not assistant_msg:
+            return None
+        t = assistant_msg["content"].strip()
+        try:
+            return float(t)
+        except ValueError:
+            return None
+
+def extract_mofid(example: dict) -> str:
+    """
+    Extract MOFID from the new JSONL chat training format.
+
+    Args:
+        example (dict): Parsed JSONL row.
 
     Returns:
-        str: The MOFID string.
+        str: MOFID string.
     """
-    m = _MOFID_LINE_RE.search(prompt)
-    if not m:
-        raise ValueError(f"MOFID not found in prompt: {prompt}")
-    mofid = m.group(1).strip().strip('"')
-    return mofid
+    # Find user message
+    user_msg = next((m for m in example.get("messages", []) if m.get("role") == "user"), None)
+    if not user_msg:
+        raise ValueError(f"No user message found in example: {example}")
+
+    # Parse user content (stored as JSON string)
+    try:
+        user_content = json.loads(user_msg["content"])
+    except json.JSONDecodeError as e:
+        raise ValueError(f"User content is not valid JSON: {user_msg['content']}") from e
+
+    mofid = user_content.get("mofid")
+    if not mofid:
+        raise ValueError(f"MOFID not found in user content: {user_content}")
+
+    return mofid.strip()

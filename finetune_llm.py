@@ -1,12 +1,13 @@
 import sys
 from dotenv import load_dotenv
 from openai import OpenAI
+from openai.types.fine_tuning import SupervisedMethod, SupervisedHyperparameters
 import os
 import yaml
 import pandas as pd
 import csv
 import json
-from model.utils import split_data_df, parse_first_float
+from model.utils import split_data_df
 from model.llm_utils import *
 from dataset.dataset_llm import *
 from typing import Optional, Dict, Tuple, List
@@ -56,9 +57,12 @@ class OpenAIFinetuneMOFID:
         kwargs = dict(
             model=self.base_model,
             training_file=self.train_file_id,
-            n_epochs=self.n_epochs,
+            validation_file=self.val_file_id,
             suffix=self.suffix,
-            hyperparameters={"n_epochs": self.n_epochs}
+            method={
+                "type": "supervised",
+                "supervised": SupervisedMethod(hyperparameters=SupervisedHyperparameters(n_epochs=self.n_epochs))
+            }
         )
         if self.val_file_id:
             kwargs["validation_file"] = self.val_file_id
@@ -179,7 +183,6 @@ class OpenAIFinetuneMOFID:
 #     id_prop_full_df = pd.read_csv(config["lookup_path"])
 #     # Split into Train, Val, Test DF splits
 #     train_df, valid_df, test_df = split_data_df(id_prop_full_df, **config["dataloader"])
-#     print(f"Train size: {len(train_df)}, Validation size: {len(valid_df)}, Test size: {len(test_df)}")
 
 #     config['prompt-gen']['train_jsonl'] = config['prompt-gen']['train_jsonl'].format(target_property)
 #     config['prompt-gen']['val_jsonl'] = config['prompt-gen']['val_jsonl'].format(target_property)

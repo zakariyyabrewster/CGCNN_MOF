@@ -19,16 +19,21 @@ class PromptGenMOFID:
         self.units = self.config['units']
         self.num_precision = self.config['num_precision']
         self.num_fmt = f"{{:.{self.num_precision}f}}"
-        # self.SEPARATOR = self.config['SEPARATOR']
-        # self.STOP = self.config['STOP']
         self.drop_bad = self.config['drop_bad']
-    
+        self.prop_to_prompt_dict = {
+            "Di": "Di",
+            "Dif": "Dif",
+            "Df": "Df",
+            "CO2_LP": "CO2 uptake at 0.15 bar",
+            "CH4_HP": "CH4 uptake at 65 bar",
+            "logKH_CO2": "log of Henry's constant for CO2"
+        }
+        self.prop_to_prompt = self.prop_to_prompt_dict.get(self.prop_name, self.prop_name)
+
     def _sanitize(self, text: str) -> str:
         if text is None:
             return ""
         t = str(text)
-        # t = t.replace(self.SEPARATOR, " ")
-        # t = t.replace(self.STOP, " ")
         return t
 
     def _parse_mofid(self, raw: str):
@@ -91,7 +96,7 @@ class PromptGenMOFID:
         else:
             target_text = self.num_fmt.format(y)
 
-        system_txt = f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_name} in {self.units} as a number (no units, no extra text)."
+        system_txt = f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_to_prompt} in {self.units} as a number (no units, no extra text)."
         
         if test:
             return {

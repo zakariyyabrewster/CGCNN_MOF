@@ -8,3 +8,4 @@ pymatgen
 tensorboard
 transformers
 openai
+dotenv

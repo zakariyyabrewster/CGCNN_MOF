@@ -219,7 +219,7 @@ def setup_signal_handlers(daemon_ref):
     signal.signal(signal.SIGTERM, signal_handler)
     return signal_handler
 
-def wait_for_job(finetuner, poll_s=20, timeout_min=180, save_state=True):
+def wait_for_job(finetuner, poll_s=60, timeout_min=180, save_state=True):
     """
     Synchronous waiting for fine-tuning job completion.
     Useful for non-HPC environments where blocking wait is acceptable.
@@ -266,7 +266,13 @@ def wait_for_job(finetuner, poll_s=20, timeout_min=180, save_state=True):
                     # STEP 9: Save updated state with model ID for future use
                     if save_state:
                         finetuner._save_job_state()
-                
+                else:
+                    print(f"Job failed or was cancelled.")
+                    print(f"Job details: {obj}")
+                    print(f"Status: {status}")
+                    print(f"Error message: {obj.get('error', 'No error message available')}")
+                    sys.exit(1)
+
                 # STEP 10: Exit loop and return final status
                 return status, obj
                 

@@ -1,21 +1,20 @@
 import sys
 from dotenv import load_dotenv
 from openai import OpenAI
-from openai.types.fine_tuning import SupervisedMethod, SupervisedHyperparameters
 import os
 import yaml
 import pandas as pd
 import csv
 import json
 from model.utils import split_data_df
-from model.llm_utils import *
+from model.llm_utils import wait_for_job
 from dataset.dataset_llm import *
 from typing import Optional, Dict, Tuple, List
 import time, re
+import numpy as np
 '''
 Finetune OpenAI Model on CoRE2019 Dataset
 '''
-
 class OpenAIFinetuneMOFID:
     def __init__(self, config):
         self.config = config
@@ -24,6 +23,8 @@ class OpenAIFinetuneMOFID:
         )
         self.base_model = self.config["finetuner"]["base_model"]
         self.n_epochs = self.config["finetuner"]["n_epochs"]
+        self.batch_size = self.config["finetuner"]["batch_size"]
+        self.learning_rate_multiplier = self.config["finetuner"]["learning_rate_multiplier"]
         self.suffix = self.config["finetuner"]["suffix"]
 
         self.train_file_id: Optional[str] = None
@@ -32,7 +33,6 @@ class OpenAIFinetuneMOFID:
         self.fine_tuned_model: Optional[str] = None
 
         self.float_re = re.compile(self.config["FLOAT_RE"])
-        self.stop = self.config["prompt-gen"]["STOP"]
 
         df = pd.read_csv(self.config["lookup_path"])
         df["MOFID"] = df["MOFID"].astype(str)
@@ -61,11 +61,19 @@ class OpenAIFinetuneMOFID:
             suffix=self.suffix,
             method={
                 "type": "supervised",
-                "supervised": SupervisedMethod(hyperparameters=SupervisedHyperparameters(n_epochs=self.n_epochs))
+                "supervised": {
+                    "hyperparameters": {
+                        "n_epochs": self.n_epochs,
+                        "batch_size": self.batch_size,
+                        "learning_rate_multiplier": self.learning_rate_multiplier
+                    }
+                }
             }
         )
         if self.val_file_id:
             kwargs["validation_file"] = self.val_file_id
+
+        print(kwargs.items())
 
         job = self.client.fine_tuning.jobs.create(**kwargs)
         self.job_id = job.id
@@ -151,105 +159,70 @@ class OpenAIFinetuneMOFID:
             for cif_id, target, pred in zip(names, targets, preds):
                 writer.writerow((cif_id, target, pred))
 
-        # Calculate and return basic metrics
-        if targets and preds:
-            import numpy as np
-            mae = np.mean(np.abs(np.array(targets) - np.array(preds)))
-            rmse = np.sqrt(np.mean((np.array(targets) - np.array(preds))**2))
-            return {"mae": mae, "rmse": rmse, "n_samples": len(targets)}
-        else:
-            return {"mae": float('nan'), "rmse": float('nan'), "n_samples": 0}
-
-# if __name__ == "__main__":
-#     config = yaml.load(open("config_ft_llm.yaml", "r"), Loader=yaml.FullLoader)
-#     target_property = config["prompt-gen"]["target_property"]
-#     data_name = config["data_name"]
-#     seed = config['dataloader']['random_seed']
-#     config["finetuner"]["suffix"] = config["finetuner"]["suffix"].format(target_property)
-#     config["log_dir"] = os.path.join(config["log_dir"].format(config["mof_representation"]), "{}_{}_{}_{}_{}".format(config["finetuner"]["base_model"], config["mof_representation"], data_name, seed, target_property))
-#     # ex. log_dir: training_results/finetuning/LLM_MOFID/gpt-4o-mini_MOFID_CoRE2019_1_Di
-
-#     config["lookup_path"] = config["lookup_path"].format(target_property)
-
-#     if not os.path.exists(config["lookup_path"]):
-#         raise FileNotFoundError(f"Lookup file not found: {config['lookup_path']}")
-
-#     # Load the full dataset
-#     id_prop_full_df = pd.read_csv(config["lookup_path"])
-#     # Split into Train, Val, Test DF splits
-#     train_df, valid_df, test_df = split_data_df(id_prop_full_df, **config["dataloader"])
-
-#     config['prompt-gen']['train_jsonl'] = config['prompt-gen']['train_jsonl'].format(target_property)
-#     config['prompt-gen']['val_jsonl'] = config['prompt-gen']['val_jsonl'].format(target_property)
-#     config['prompt-gen']['test_jsonl'] = config['prompt-gen']['test_jsonl'].format(target_property)
-
-#     if config["mof_representation"] == "MOFID":
-#         prompt_gen = PromptGenMOFID(config)
-#     if config["mof_representation"] == "CIF":
-#         prompt_gen = PromptGenCIF(config)
-
-#     # Convert DataFrames to JSONL
-#     prompt_gen.df_to_jsonl(train_df, config['prompt-gen']['train_jsonl'])
-#     prompt_gen.df_to_jsonl(valid_df, config['prompt-gen']['val_jsonl'])
-#     prompt_gen.df_to_jsonl(test_df, config['prompt-gen']['test_jsonl'])
-
-#     # Set up Finetuner
-#     load_dotenv() # load API keys
-#     api_key = os.getenv("OPEN_AI_KEY")
-#     if not api_key:
-#         raise ValueError("OPEN_AI_KEY not found in environment variables. Please create a .env file with your OpenAI API key.")
-#     config["finetuner"]["OPEN_AI_KEY"] = api_key
-
-#     if config['mof_representation'] == "MOFID":
-#         finetuner = OpenAIFinetuneMOFID(config)
-    # elif config['mof_representation'] == "cif":
-    #     finetuner = OpenAIFinetuneCIF(config)
-
-    # # Setup signal handlers with daemon reference
-    # daemon_ref = {'daemon': None}
-    # setup_signal_handlers(daemon_ref)
-
-    # # Main execution logic - supports both HPC and local execution
-    # try:
-    #     # Check if we have an existing job
-    #     if finetuner.load_job_state():
-    #         print("🔄 Resuming existing fine-tuning job...")
-    #         status, job_info = finetuner.check_job_status()
-    #         print(f"📋 Current job status: {status}")
-            
-    #         # Check if job is already completed
-    #         if check_for_completion(status, finetuner):
-    #             sys.exit(0)  # Successfully handled completed job
-    #         else:
-    #             # Job still running - setup monitoring
-    #             print("⏳ Job still running...")
-    #             daemon_ref['daemon'] = JobMonitorDaemon(finetuner.client, config['log_dir'])
-    #             daemon_ref['daemon'].start()
-                
-    #             if setup_monitoring(finetuner, daemon_ref['daemon']):
-    #                 # User chose synchronous waiting
-    #                 status, job_info = wait_for_completion(finetuner, daemon_ref['daemon'])
-                
-    #     else:
-    #         # Start new job
-    #         print("🚀 Starting new fine-tuning job...")
-    #         job_id = finetuner.start_job()
-    #         print(f"✅ Fine-tuning job started with ID: {job_id}")
-            
-    #         # Setup monitoring
-    #         daemon_ref['daemon'] = JobMonitorDaemon(finetuner.client, config['log_dir'])
-    #         daemon_ref['daemon'].start()
-            
-    #         if setup_monitoring(finetuner, daemon_ref['daemon'], job_id):
-    #             # User chose synchronous waiting
-    #             status, job_info = wait_for_completion(finetuner, daemon_ref['daemon'])
-
-    #     # Handle completion (only reached if synchronous waiting was chosen)
-    #     success = handle_completed_job(status, finetuner)
-    #     sys.exit(0 if success else 1)
+if __name__ == "__main__":
+    property_list = ["Di", "Df", "CO2_LP", "CH4_HP", "logKH_CO2"]
+    unit_dict = {
+            "Di": "angstrom",
+            "Df": "angstrom",
+            "CO2_LP": "mmol/g",
+            "CH4_HP": "mmol/g",
+            "logKH_CO2": "unitless"
+        }
+    for prop in property_list:
+        config = yaml.load(open("config_ft_llm.yaml", "r"), Loader=yaml.FullLoader)
+        config["prompt-gen"]["target_property"] = prop
+        target_property = config["prompt-gen"]["target_property"]
         
-    # except Exception as e:
-    #     print(f"💥 Unexpected error: {e}")
-    #     if daemon_ref['daemon']:
-    #         daemon_ref['daemon'].stop()
-    #     sys.exit(1)
+        config["prompt-gen"]["units"] = unit_dict.get(target_property, "unknown")
+        data_name = config["data_name"]
+        seed = config['dataloader']['random_seed']
+        config["finetuner"]["suffix"] = config["finetuner"]["suffix"].format(target_property)
+        config["log_dir"] = os.path.join(config["log_dir"].format(config["mof_representation"]), "{}_{}_{}_{}_{}".format(config["finetuner"]["base_model"], config["mof_representation"], data_name, seed, target_property))
+        # ex. log_dir: training_results/finetuning/LLM_MOFID/gpt-4o-mini_MOFID_CoRE2019_1_Di
+
+        config["lookup_path"] = config["lookup_path"].format(target_property)
+
+        if not os.path.exists(config["lookup_path"]):
+            raise FileNotFoundError(f"Lookup file not found: {config['lookup_path']}")
+
+        # Load the full dataset
+        id_prop_full_df = pd.read_csv(config["lookup_path"])
+        # Split into Train, Val, Test DF splits
+        train_df, valid_df, test_df = split_data_df(id_prop_full_df, **config["dataloader"])
+
+        config['prompt-gen']['train_jsonl'] = config['prompt-gen']['train_jsonl'].format(target_property)
+        config['prompt-gen']['val_jsonl'] = config['prompt-gen']['val_jsonl'].format(target_property)
+        config['prompt-gen']['test_jsonl'] = config['prompt-gen']['test_jsonl'].format(target_property)
+
+        prompt_gen = PromptGenMOFID(config)
+
+        # Convert DataFrames to JSONL
+        prompt_gen.df_to_jsonl(train_df, config['prompt-gen']['train_jsonl'])
+        prompt_gen.df_to_jsonl(valid_df, config['prompt-gen']['val_jsonl'])
+        prompt_gen.df_to_jsonl(test_df, config['prompt-gen']['test_jsonl'])
+
+        # Set up Finetuner
+        load_dotenv() # load API keys
+        api_key = os.getenv("OPEN_AI_KEY")
+        if not api_key:
+            raise ValueError("OPEN_AI_KEY not found in environment variables. Please create a .env file with your OpenAI API key.")
+        config["finetuner"]["OPEN_AI_KEY"] = api_key
+
+        finetuner = OpenAIFinetuneMOFID(config)
+
+        print(f"Starting fine-tuning on {prop}...")
+
+        finetuner.start_job()
+        # Wait for job to complete (timeout = 3h, poll = 1m)
+        status, job_obj = wait_for_job(finetuner)
+        print(f"Job status: {status}")
+        print(f"Job details: {job_obj}")
+        print(f"Fine-tuned model: {finetuner.fine_tuned_model}")
+        print(f"Fine-tuning on {prop} complete.")
+        finetuner.eval_jsonl()
+        print(f"Evaluation on {prop} complete.")
+
+    print("All properties processed.")
+
+
+

@@ -160,6 +160,11 @@ class OpenAIFinetuneMOFID:
                 writer.writerow((cif_id, target, pred))
 
 if __name__ == "__main__":
+    load_dotenv()
+    api_key = os.getenv("OPEN_AI_KEY")
+    if not api_key:
+        raise ValueError("OPEN_AI_KEY not found in environment variables. Please create a .env file with your OpenAI API key.")
+    
     property_list = ["Di", "Df", "CO2_LP", "CH4_HP", "logKH_CO2"]
     unit_dict = {
             "Di": "angstrom",
@@ -202,10 +207,6 @@ if __name__ == "__main__":
         prompt_gen.df_to_jsonl(test_df, config['prompt-gen']['test_jsonl'])
 
         # Set up Finetuner
-        load_dotenv() # load API keys
-        api_key = os.getenv("OPEN_AI_KEY")
-        if not api_key:
-            raise ValueError("OPEN_AI_KEY not found in environment variables. Please create a .env file with your OpenAI API key.")
         config["finetuner"]["OPEN_AI_KEY"] = api_key
 
         finetuner = OpenAIFinetuneMOFID(config)

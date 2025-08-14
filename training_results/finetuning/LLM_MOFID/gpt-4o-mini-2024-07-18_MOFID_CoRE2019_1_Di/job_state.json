@@ -1,0 +1,6 @@
+{
+  "job_id": "ftjob-tfKiHMpHv9EuDygQs6PNp3Hd",
+  "fine_tuned_model": "ft:gpt-4o-mini-2024-07-18:ai4chems:mof-reg-di:C4KWGN5a",
+  "train_file_id": "file-4h6g6P195nTuUy8Qy2kk8c",
+  "val_file_id": "file-FMNC6WtcSVCwtP1QeNHE9T"
+}

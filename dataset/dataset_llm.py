@@ -98,7 +98,7 @@ class PromptGenMOFID:
 
         system_txt = f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_to_prompt} in {self.units} as a number (no units, no extra text)."
         
-        if test:
+        if not test:
             return {
                 "messages": [
                     {"role": "system", "content": system_txt},
@@ -114,10 +114,10 @@ class PromptGenMOFID:
                 ]
             }
 
-    def df_to_jsonl(self, df, jsonl_path):
+    def df_to_jsonl(self, df, jsonl_path, test: bool = False):
         with open(jsonl_path, "w", encoding="utf-8") as out:
             for _, r in df.iterrows():
-                example = self.row_to_ex(r)
+                example = self.row_to_ex(r, test=test)
                 if example is not None:  # Skip None entries when drop_bad=True
                     out.write(json.dumps(example) + "\n")
 

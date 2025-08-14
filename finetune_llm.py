@@ -202,9 +202,9 @@ if __name__ == "__main__":
         prompt_gen = PromptGenMOFID(config)
 
         # Convert DataFrames to JSONL
-        prompt_gen.df_to_jsonl(train_df, config['prompt-gen']['train_jsonl'])
-        prompt_gen.df_to_jsonl(valid_df, config['prompt-gen']['val_jsonl'])
-        prompt_gen.df_to_jsonl(test_df, config['prompt-gen']['test_jsonl'])
+        prompt_gen.df_to_jsonl(train_df, config['prompt-gen']['train_jsonl'], test=False)
+        prompt_gen.df_to_jsonl(valid_df, config['prompt-gen']['val_jsonl'], test=False)
+        prompt_gen.df_to_jsonl(test_df, config['prompt-gen']['test_jsonl'], test=True)
 
         # Set up Finetuner
         config["finetuner"]["OPEN_AI_KEY"] = api_key

@@ -1,6 +1,6 @@
 finetuner:
-  OPEN_AI_KEY: None
   base_model: "gpt-4o-mini-2024-07-18"
+  ft_model: null
   n_epochs: 2
   batch_size: 16
   learning_rate_multiplier: 0.25
@@ -8,7 +8,7 @@ finetuner:
 
 FLOAT_RE: '[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?'
 data_name: "CoRE2019"
-mof_representation: "MOFID"
+
 prompt-gen:
   target_property: "Di"
   units: "angstrom"
@@ -17,13 +17,12 @@ prompt-gen:
   train_jsonl: "test_datasets/train_{}.jsonl"
   val_jsonl: "test_datasets/val_{}.jsonl"
   test_jsonl: "test_datasets/test_{}.jsonl"
-  cif_dir: "test_datasets/CoRE2019"
   
 
 
 lookup_path: "test_datasets/mofid_{}.csv"
 
-log_dir: "training_results/finetuning/LLM_{}"
+log_dir: "training_results/finetuning/LLM_MOF"
 
 dataloader:
   valid_ratio: 0.15

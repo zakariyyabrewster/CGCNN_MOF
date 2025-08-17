@@ -1,10 +1,6 @@
-import csv, re, json
-import argparse, json, os, re, time
+import os, re, json
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
-import sys
-import os
-from pymatgen.core.structure import Structure
 
 
 '''
@@ -21,20 +17,15 @@ class PromptGenMOFID:
         self.num_fmt = f"{{:.{self.num_precision}f}}"
         self.drop_bad = self.config['drop_bad']
         self.prop_to_prompt_dict = {
-            "Di": "Di",
-            "Dif": "Dif",
-            "Df": "Df",
+            "Di": "Di", "Dif": "Dif", "Df": "Df",
             "CO2_LP": "CO2 uptake at 0.15 bar",
             "CH4_HP": "CH4 uptake at 65 bar",
-            "logKH_CO2": "log of Henry's constant for CO2"
+            "logKH_CO2": "log Henry's constant for CO2"
         }
         self.prop_to_prompt = self.prop_to_prompt_dict.get(self.prop_name, self.prop_name)
 
     def _sanitize(self, text: str) -> str:
-        if text is None:
-            return ""
-        t = str(text)
-        return t
+        return "" if text is None else str(text)
 
     def _parse_mofid(self, raw: str):
         s = raw.strip().strip('"')
@@ -52,11 +43,12 @@ class PromptGenMOFID:
         cat = cat.lower()
         m = re.search(r"cat\d+", cat)
         cat = m.group(0) if m else ("cat0" if "0" in cat else "cat1" if "1" in cat else "cat0")
-        return {"raw": self._sanitize(s), 
-                "smiles": self._sanitize(smiles.strip()), 
-                "topology": self._sanitize(topo), 
-                "catenation": self._sanitize(cat)
-                }
+        return {
+            "raw": self._sanitize(s), 
+            "smiles": self._sanitize(smiles.strip()), 
+            "topology": self._sanitize(topo), 
+            "catenation": self._sanitize(cat)
+            }
 
     def _make_user_payload(self, mofid_str: str) -> str:
         p = self._parse_mofid(mofid_str)
@@ -80,157 +72,46 @@ class PromptGenMOFID:
             print(f"Error rounding label {label}: {e}")
             return float("nan")
 
-    def row_to_ex(self, r: dict, test: bool = False):
+    def row_to_ex(self, r: dict):
         try:
             mofid_str = r["MOFID"]
             y = self._round_label(r[self.prop_name])
             user_payload = self._make_user_payload(mofid_str)
         except Exception:
-            if self.drop_bad: return None
-            mofid_str, y = r.get("MOFID", ""), float("nan")
+            if self.drop_bad: 
+                return None
+            mofid_str = r.get("MOFID", "")
+            y = float("nan")
             user_payload = json.dumps({"mofid": str(mofid_str), "fields": {}}, separators=(",", ":"))
 
         # Handle NaN values in completion
         if pd.isna(y):
-            target_text = "NaN"
-        else:
-            target_text = self.num_fmt.format(y)
+            return None if self.drop_bad else {
+            "messages": [
+                {"role": "system", "content": f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_to_prompt} in {self.units} as a number (no units, no extra text)."},
+                {"role": "user", "content": user_payload},
+                {"role": "assistant", "content": "NaN"}  # keep only if you really want to audit later
+            ]
+        }
+
+        target_txt = self.num_fmt.format(y)
 
         system_txt = f"You are a crystallography regression model. Given MOFID metadata, output only {self.prop_to_prompt} in {self.units} as a number (no units, no extra text)."
         
-        if not test:
-            return {
-                "messages": [
-                    {"role": "system", "content": system_txt},
-                    {"role": "user", "content": user_payload},
-                    {"role": "assistant", "content": target_text}
-                ]
-            }
-        else:
-            return {
-                "messages": [
-                    {"role": "system", "content": system_txt},
-                    {"role": "user", "content": user_payload},
-                ]
-            }
-
-    def df_to_jsonl(self, df, jsonl_path, test: bool = False):
-        with open(jsonl_path, "w", encoding="utf-8") as out:
-            for _, r in df.iterrows():
-                example = self.row_to_ex(r, test=test)
-                if example is not None:  # Skip None entries when drop_bad=True
-                    out.write(json.dumps(example) + "\n")
-
-    def format_for_inference(self, mofid: str) -> str:
-        p = self._parse_mofid(mofid)
-        return self._make_user_payload(p)
-
-class PromptGenCIF:
-    def __init__(self, config):
-        self.config = config['prompt-gen']
-        self.prop_name = self.config['target_property']
-        self.units = self.config['units']
-        self.num_precision = self.config['num_precision']
-        self.num_fmt = f"{{:.{self.num_precision}f}}"
-        self.SEPARATOR = self.config['SEPARATOR']
-        self.STOP = self.config['STOP']
-        self.drop_bad = self.config['drop_bad']
-    
-    def _sanitize(self, text: str) -> str:
-        if text is None:
-            return ""
-        t = str(text)
-        t = t.replace(self.SEPARATOR, " ")
-        t = t.replace(self.STOP, " ")
-        return t
-    
-    def format_cif(self, mofname: str) -> str:
-        """
-        Format a CIF file name into a prompt string.
-        
-        Args:
-            mofname (str): The name of the MOF file.
-
-        Returns:
-            str: A formatted prompt string.
-        """
-        cif_path = os.path.join(self.config['cif_dir'], f"{mofname}.cif")
-        if not os.path.exists(cif_path):
-            return {"cell": {"a": None, "b": None, "c": None, "alpha": None, "beta": None, "gamma": None, "volume": None}, "density": None, "formula": {}}
-        crystal = Structure.from_file(cif_path)
-        lattice = crystal.lattice
-        formula = crystal.formula
-        cell = {
-            "a": round(lattice.abc[0], 3),
-            "b": round(lattice.abc[1], 3),
-            "c": round(lattice.abc[2], 3),
-            "alpha": round(lattice.angles[0], 2),
-            "beta": round(lattice.angles[1], 2),
-            "gamma": round(lattice.angles[2], 2),
-            "volume": round(lattice.volume, 2),
+        return {
+            "messages": [
+                {"role": "system", "content": system_txt},
+                {"role": "user", "content": user_payload},
+                {"role": "assistant", "content": target_txt}
+            ]
         }
-        density = round(crystal.density, 3)
-        comp = crystal.composition.get_el_amt_dict()
-        formula = {el: int(round(comp[el])) for el in sorted(comp.keys())}
-        return {"cell": cell, "density": density, "formula": formula}
-
-    def _make_prompt(self, mofname: str) -> str:
-
-        angstrom = "\u212B"
-        degree = "\u00B0"
-
-        formatted_cif = self.format_cif(mofname)
-        core = (
-            f"Q: Predict {self.prop_name} (units: {self.units}) for MOF.\n"
-            f"MOFName: {mofname}\n"
-            f"Fields: \n"
-            f"    - Lattice: a={formatted_cif['cell']['a']} {angstrom}, b={formatted_cif['cell']['b']} {angstrom}, c={formatted_cif['cell']['c']} {angstrom}, alpha={formatted_cif['cell']['alpha']} {degree}, beta={formatted_cif['cell']['beta']} {degree}, gamma={formatted_cif['cell']['gamma']} {degree}\n"
-            f"    - Volume: {formatted_cif['cell']['volume']} {angstrom}^3\n"
-            f"    - Density: {formatted_cif['density']} g/cm^3\n"
-            f"    - Formula: {', '.join([f'{el}: {count}' for el, count in formatted_cif['formula'].items()])}\n"
-        )
-        return core + self.SEPARATOR
-    
-    def _round_label(self, label: float) -> float:
-        if label is None or pd.isna(label):
-            return float("nan")
-        try:
-            return round(float(label), self.num_precision)
-        except Exception as e:
-            print(f"Error rounding label {label}: {e}")
-            return float("nan")
-
-    def row_to_ex(self, r: dict):
-        try:
-            mofname_str = r["MOFName"]
-            y = self._round_label(r[self.prop_name])
-        except Exception:
-            if self.drop_bad: return None
-            mofname_str, y = r.get("MOFName", ""), float("nan")
-
-        # Handle NaN values in completion
-        if pd.isna(y):
-            completion_text = " NaN" + self.STOP
-        else:
-            completion_text = " " + self.num_fmt.format(y) + self.STOP
-            
-        return {"prompt": self._make_prompt(mofname_str),
-                "completion": completion_text}
 
     def df_to_jsonl(self, df, jsonl_path):
-        with open(jsonl_path, "w", encoding="utf-8") as out:
+        with open(jsonl_path, "w", encoding="utf-8", newline="\n") as out:
             for _, r in df.iterrows():
                 example = self.row_to_ex(r)
                 if example is not None:  # Skip None entries when drop_bad=True
-                    out.write(json.dumps(example) + "\n")
-
-    def format_for_inference(self, mofname: str) -> str:
-        return self._make_prompt(mofname)
-
-
-def parse_first_float(text: str, float_re: re.Pattern) -> Optional[float]:
-    m = float_re.search(text)
-    return float(m.group(0)) if m else None
+                    out.write(json.dumps(example, separators=(",", ":")) + "\n")
 
 def read_jsonl(path: str) -> List[Dict[str, str]]:
     """
@@ -249,20 +130,17 @@ def read_jsonl(path: str) -> List[Dict[str, str]]:
                 items.append(json.loads(line))
     return items
 
-def extract_label(example: dict, stop: Optional[str] = None) -> Optional[float]:
+def extract_label(example: dict) -> Optional[float]:
     """
-    Extract the label (float) from either:
-      - old format: {"completion": " 4.46@@@"}
-      - new chat format: {"messages": [{"role": "assistant", "content": "4.46"}]}
+    Extract the label (float) from {"messages": [{"role": "assistant", "content": "4.46"}]}
     
     Args:
         example (dict): Parsed JSONL row.
-        stop (str, optional): Stop token to strip (old format only).
-    
+
     Returns:
         float or None: The extracted label.
     """
-    # Case 1: Chat format
+    
     if "messages" in example:
         assistant_msg = next((m for m in example["messages"] if m.get("role") == "assistant"), None)
         if not assistant_msg:

@@ -131,6 +131,8 @@ class OpenAIFinetune:
         prompt["messages"] = [msg for msg in prompt["messages"] if msg["role"] != "assistant"]
         test_prompt = prompt["messages"]
 
+        print(test_prompt)
+
         response = self.client.chat.completions.create(
             model=self.fine_tuned_model,
             messages=test_prompt,

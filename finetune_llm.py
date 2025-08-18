@@ -152,6 +152,7 @@ class OpenAIFinetune:
         data = read_jsonl(test_path)
 
         targets, preds, names = [], [], []
+        i = 0
 
         for ex in data:
             label = extract_label(ex)
@@ -169,6 +170,9 @@ class OpenAIFinetune:
             preds.append(pred)
             names.append(mofname)
 
+            if i % 10 == 0:
+                print(f"{i}/{len(data)} - {mofname}: target={label}, pred={pred}")
+            i += 1
 
 
         with open(output_path, 'w', newline='') as f:

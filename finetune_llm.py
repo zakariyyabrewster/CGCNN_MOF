@@ -127,7 +127,8 @@ class OpenAIFinetune:
     def generate_prop_val(self, prompt: str, max_completion_tokens: int = 10) -> Optional[float]:
         if not self.fine_tuned_model:
             raise ValueError("Fine-tuned model is not set. Run `start_job` and monitor for completion first.")
-        
+
+        prompt["messages"] = [msg for msg in prompt["messages"] if msg["role"] != "assistant"]
         test_prompt = prompt["messages"]
 
         response = self.client.chat.completions.create(

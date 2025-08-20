@@ -2,7 +2,7 @@
 
 This is a fork of the implementation of ["MOFormer: Self-Supervised Transformer model for Metal-Organic Framework Property Prediction"](https://pubs.acs.org/doi/10.1021/jacs.2c11420). This work proposes a structure-agnostic deep learning method based on the Transformer model, named as <strong><em>MOFormer</em></strong>, for property predictions of MOFs. <strong><em>MOFormer</em></strong> takes a text string representation of MOF (MOFid) as input, thus circumventing the need of obtaining the 3D structure of a hypothetical MOF and accelerating the screening process.
 
-This repository trains Crystal Graph Convolutional Networks (CGCNNs) and Transformer-based models on the CoRE2019 Metal-Organic Framework (MOF) dataset, using crystal structure files (CIFs) and MOFIDs (molecular identifiers), respectively. The models are tasked with predicting a range of geometry-dependent and chemistry-dependent material properties.
+This repository trains Crystal Graph Convolutional Networks (CGCNNs), Transformer-based models, PointNet (MLP Network on Point Clouds), and an OpenAI GPT model on the CoRE2019 Metal-Organic Framework (MOF) dataset, using crystal structure files (CIFs) and MOFIDs (molecular identifiers). The models are tasked with predicting a range of geometry-dependent and chemistry-dependent material properties.
 
 Model performance is evaluated using metrics such as Spearman Rank Correlation Coefficient (SRCC), MAE, and R², allowing a direct comparison of predictive accuracy across property types. This enables analysis of the disparity in model performance when predicting structural/geometric properties versus chemical adsorption and affinity properties, shedding light on how well each architecture captures different facets of material behaviour. 
 
@@ -97,7 +97,7 @@ bash train_cgcnn.sh property1 property2 property3
 ```
 To sequentially train a model on each property at once. Note that you may need to change the SBATCH params, such as --time and --mem depending on how many properties you decide to train in a single job.
 
-For Trasnformer training, edit your model/optimizer/training pipeline configurations in `config_ft_transformer.yaml`. Before running `transformer_run.sh`, edit the script as such:
+For Transformer training, edit your model/optimizer/training pipeline configurations in `config_ft_transformer.yaml`. Before running `transformer_run.sh`, edit the script as such:
 ```
 bash train_transformer.sh target_property
 ```
@@ -115,8 +115,11 @@ Visualizations / Graphs / Tables will be saved in `training_results/analysis` un
 
 WIP
 
+## Results
+See training_results/analysis for single-shot and cross-validated results per model; See training_results/cross_model_analysis for cross-representation comparison.
+
 ## Acknowledgement
 - CGCNN: [Paper](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.120.145301) and [Code](https://github.com/txie-93/cgcnn)
-- Barlow Twins: [Paper](https://arxiv.org/abs/2103.03230) and [Code](https://github.com/facebookresearch/barlowtwins)
-- Crystal Twins: [Paper](https://www.nature.com/articles/s41524-022-00921-5) and [Code](https://github.com/RishikeshMagar/Crystal-Twins)
+- MOFormer
 - MOFid: [Paper](https://pubs.acs.org/doi/full/10.1021/acs.cgd.9b01050) and [Code](https://github.com/snurr-group/mofid/tree/master)
+- PointNet: [Paper]() and [codebase]()
